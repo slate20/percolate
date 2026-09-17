@@ -1,0 +1,23 @@
+{
+  "bourbon": {
+    "id": "bourbon",
+    "name": "Bourbon",
+    "growth_time": 10800,
+    "seed_cost": 8,
+    "raw_sell_value": 14
+  },
+  "yirgacheffe": {
+    "id": "yirgacheffe",
+    "name": "Yirgacheffe",
+    "growth_time": 14400,
+    "seed_cost": 16,
+    "raw_sell_value": 28
+  },
+  "geisha": {
+    "id": "geisha",
+    "name": "Geisha",
+    "growth_time": 21600,
+    "seed_cost": 35,
+    "raw_sell_value": 65
+  }
+}

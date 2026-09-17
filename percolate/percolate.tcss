@@ -1,0 +1,204 @@
+/* Ambient/state styling for the Farm & Roast screens (overview.md §4).
+   Market and Upgrades stay plain — they're utility screens, not the "zen".
+
+   Literal color names on purpose: theme variables like $warning aren't
+   reliably resolved at CSS_PATH parse time (raises UnresolvedVariableError). */
+
+.tint-bar {
+    height: 1;
+    dock: top;
+    text-align: right;
+    color: #b3b3b3;
+    padding-right: 2;
+}
+
+/* Replaces Textual's default Footer (see widgets.NAV_HINT) — one slim,
+   muted, always-the-same line instead of a loud per-screen key-chip bar. */
+.nav-hint {
+    dock: bottom;
+    height: 1;
+    color: #808080;
+    text-align: center;
+}
+
+/* Farm screen backdrop: static, non-interactive landscape art
+   (see data/farmhouse.json), size-adaptive per FarmScreen._sync_backdrop. */
+#backdrop {
+    height: auto;
+    width: auto;
+    padding: 1 0 0 2;
+}
+
+#field {
+    height: auto;
+    padding: 1 2;
+    grid-gutter: 1 2;
+}
+
+.plot-cell {
+    border: round grey;
+    width: 21;
+    height: 13;
+    content-align: center middle;
+    text-align: center;
+}
+
+.plot-cell.cursor {
+    border: round gold;
+}
+
+/* Roast screen: three-column layout — a persistent bean/flavor/level
+   builder on the left, the ambient roaster art in the center, and the
+   discovered-recipe log on the right (see screens/roast_screen.py). */
+#roast_layout {
+    height: 1fr;
+}
+
+#builder_panel {
+    width: 34;
+    padding: 1 2;
+    border-right: solid #4d4d4d;
+}
+
+#builder_panel OptionList, #builder_panel SelectionList {
+    height: auto;
+    max-height: 6;
+    margin-bottom: 1;
+}
+
+.builder-heading {
+    text-style: bold;
+    color: #b3b3b3;
+}
+
+.builder-status {
+    margin: 1 0;
+    color: khaki;
+}
+
+#center_panel {
+    width: 1fr;
+}
+
+#roaster_field {
+    height: auto;
+    padding: 1 2;
+    grid-gutter: 1 2;
+    align: center top;
+}
+
+/* Roaster cards run larger than plot cards — there are always far fewer
+   roaster slots than plots, so each one can afford more visual weight. */
+.roast-cell {
+    border: round grey;
+    width: 33;
+    height: 17;
+    content-align: center middle;
+    text-align: center;
+}
+
+#no_roaster {
+    color: #8a8a8a;
+    text-align: center;
+    content-align: center middle;
+    width: 40;
+    height: 8;
+    border: round grey;
+}
+
+#recipe_panel {
+    width: 32;
+    padding: 1 2;
+    border-left: solid #4d4d4d;
+}
+
+.recipe-entry {
+    margin-bottom: 1;
+    text-align: center;
+}
+
+/* Market screen: plain utility layout (see screens/market_screen.py) — no
+   ambient art or tint, that "zen" budget stays on Farm/Roast. Buying and
+   selling are simply split left/right; each side is otherwise the same
+   bare Label + ListView stack as before. */
+#buy_column {
+    width: 1fr;
+    padding: 1 2;
+    border-right: solid #4d4d4d;
+}
+
+#sell_column {
+    width: 1fr;
+    padding: 1 2;
+}
+
+/* Every modal in the app (bean/ingredient/roast-level pickers, the
+   contextual upgrade shop) composes a Vertical with this id — without
+   sizing, a Vertical fills the whole screen instead of reading as a
+   popup, so give it a bounded, centered box. */
+#picker {
+    width: 70;
+    height: auto;
+    max-height: 24;
+    padding: 1 2;
+    border: round grey;
+}
+
+ModalScreen {
+    align: center middle;
+}
+
+.tod-morning { background: gold 12%; }
+.tod-midday { background: white 4%; }
+.tod-evening { background: darkorange 14%; }
+.tod-night { background: slateblue 18%; }
+
+.ambient-bar {
+    height: 1;
+    color: grey;
+}
+
+/* Plot / batch state colors — dim when empty or just starting,
+   warming with progress, bright at ready. */
+.state-empty {
+    color: grey;
+}
+
+.state-early {
+    color: darkgreen;
+}
+
+.state-mid {
+    color: darkorange;
+}
+
+.state-ready {
+    color: gold;
+    text-style: bold;
+}
+
+/* Roast progress: idle -> green -> yellow -> brown -> dark -> ready. */
+.roast-idle {
+    color: grey;
+}
+
+.roast-green {
+    color: green;
+}
+
+.roast-yellow {
+    color: khaki;
+}
+
+.roast-brown {
+    color: sienna;
+}
+
+.roast-dark {
+    color: firebrick;
+}
+
+.roast-ready {
+    color: gold;
+    text-style: bold;
+}

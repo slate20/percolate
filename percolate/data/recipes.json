@@ -1,0 +1,34 @@
+{
+  "yirgacheffe_reserve": {
+    "id": "yirgacheffe_reserve",
+    "name": "Yirgacheffe Vanilla Reserve",
+    "bean": "yirgacheffe",
+    "ingredients": ["vanilla"],
+    "roast_level": "medium",
+    "bonus_multiplier": 1.9
+  },
+  "bourbon_reserve": {
+    "id": "bourbon_reserve",
+    "name": "Bourbon Caramel Reserve",
+    "bean": "bourbon",
+    "ingredients": ["caramel"],
+    "roast_level": "dark",
+    "bonus_multiplier": 2.6
+  },
+  "geisha_reserve": {
+    "id": "geisha_reserve",
+    "name": "Geisha Cardamom Reserve",
+    "bean": "geisha",
+    "ingredients": ["cardamom"],
+    "roast_level": "light",
+    "bonus_multiplier": 1.4
+  },
+  "spiced_bourbon": {
+    "id": "spiced_bourbon",
+    "name": "Spiced Bourbon Blend",
+    "bean": "bourbon",
+    "ingredients": ["cinnamon", "vanilla"],
+    "roast_level": "medium",
+    "bonus_multiplier": 1.3
+  }
+}

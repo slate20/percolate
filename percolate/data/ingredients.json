@@ -1,0 +1,38 @@
+{
+    "cinnamon": {
+        "id": "cinnamon",
+        "name": "Cinnamon",
+        "cost": 10,
+        "value": 14
+    },
+    "vanilla": {
+        "id": "vanilla",
+        "name": "Vanilla",
+        "cost": 15,
+        "value": 20
+    },
+    "caramel": {
+        "id": "caramel",
+        "name": "Caramel",
+        "cost": 18,
+        "value": 26
+    },
+    "chocolate": {
+        "id": "chocolate",
+        "name": "Chocolate",
+        "cost": 12,
+        "value": 18
+    },
+    "hazelnut": {
+        "id": "hazelnut",
+        "name": "Hazelnut",
+        "cost": 16,
+        "value": 22
+    },
+    "cardamom": {
+        "id": "cardamom",
+        "name": "Cardamom",
+        "cost": 30,
+        "value": 45
+    }
+}

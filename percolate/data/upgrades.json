@@ -1,0 +1,49 @@
+{
+  "plot_expansion": {
+    "id": "plot_expansion",
+    "name": "Plot Expansion",
+    "description": "Add more plots to the field.",
+    "tiers": [
+      {"cost": 300, "plots_added": 2},
+      {"cost": 900, "plots_added": 2},
+      {"cost": 2500, "plots_added": 4}
+    ]
+  },
+  "soil_quality": {
+    "id": "soil_quality",
+    "name": "Soil Quality",
+    "description": "Speeds up bean growth across all plots.",
+    "tiers": [
+      {"cost": 250, "growth_speed_bonus": 0.10},
+      {"cost": 800, "growth_speed_bonus": 0.25},
+      {"cost": 2200, "growth_speed_bonus": 0.50}
+    ]
+  },
+  "roaster_slot": {
+    "id": "roaster_slot",
+    "name": "Roaster",
+    "description": "Build a roaster to start roasting beans. Further tiers add another roaster to run at once.",
+    "tiers": [
+      {"cost": 1000, "slots_added": 1},
+      {"cost": 3200, "slots_added": 1}
+    ]
+  },
+  "roaster_speed": {
+    "id": "roaster_speed",
+    "name": "Roaster Efficiency",
+    "description": "Speeds up roasting time.",
+    "tiers": [
+      {"cost": 200, "roast_speed_bonus": 0.10},
+      {"cost": 900, "roast_speed_bonus": 0.25}
+    ]
+  },
+  "infuser": {
+    "id": "infuser",
+    "name": "Infuser",
+    "description": "Unlocks flavor ingredients in the roast builder. Further tiers allow more flavors per roast.",
+    "tiers": [
+      {"cost": 6000, "max_ingredients": 1},
+      {"cost": 18000, "max_ingredients": 2}
+    ]
+  }
+}
