@@ -7,16 +7,15 @@ grid, not as a linear list, with arrow-key cursor navigation.
 
 from __future__ import annotations
 
-import math
 import time
 
 from textual.app import ComposeResult
-from textual.containers import Grid, Vertical
+from textual.containers import Container, Grid, Vertical
 from textual.screen import ModalScreen, Screen
 from textual.widgets import Header, Label, OptionList, Static
 from textual.widgets.option_list import Option
 
-from percolate.config import LARGE_BACKDROP_MIN_HEIGHT, LARGE_BACKDROP_MIN_WIDTH, UI_TICK_SECONDS
+from percolate.config import LARGE_BACKDROP_MIN_HEIGHT, UI_TICK_SECONDS
 from percolate.screens.upgrade_modal import UpgradeModal
 from percolate.widgets import NAV_HINT, apply_time_of_day
 
@@ -60,6 +59,13 @@ class Backdrop(Static):
 
 
 class FarmScreen(Screen):
+    # Must match .plot-cell / #field in percolate.tcss: cell width, the
+    # horizontal grid-gutter, and #field's left+right padding respectively.
+    # Used to work out how many cards fit per row as the window resizes.
+    _CELL_WIDTH = 21
+    _CELL_GUTTER = 2
+    _FIELD_SIDE_PADDING = 4
+
     BINDINGS = [
         ("up", "move_up", "Up"),
         ("down", "move_down", "Down"),
@@ -71,7 +77,8 @@ class FarmScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        yield Backdrop(id="backdrop")
+        with Container(id="backdrop_wrap"):
+            yield Backdrop(id="backdrop")
         yield Static("(u) Upgrades", id="tint_bar", classes="tint-bar")
         yield Grid(id="field")
         yield Static(NAV_HINT, classes="nav-hint")
@@ -91,17 +98,23 @@ class FarmScreen(Screen):
     def on_screen_resume(self) -> None:
         self.refresh_plots()
         self._sync_backdrop()
+        self._sync_field_columns()
 
     def tick(self) -> None:
         self.refresh_plots()
         self._sync_backdrop()
+        self._sync_field_columns()
         apply_time_of_day(self.query_one("#tint_bar", Static))
 
     def _sync_backdrop(self) -> None:
         width, height = self.size.width, self.size.height
+        # Width threshold tracks the large art's own width (from
+        # farmhouse.json) plus 1 cell of padding on each side, rather than
+        # a fixed constant, so it stays correct if that art is ever resized.
+        large_width = self.app.farmhouse_data["large"]["width"] + 2
         variant = (
             "large"
-            if width >= LARGE_BACKDROP_MIN_WIDTH and height >= LARGE_BACKDROP_MIN_HEIGHT
+            if width >= large_width and height >= LARGE_BACKDROP_MIN_HEIGHT
             else "compact"
         )
         if variant == self._backdrop_variant:
@@ -122,7 +135,7 @@ class FarmScreen(Screen):
         grid.remove_children()
 
         count = len(farm.plots)
-        self._columns = min(max(1, math.ceil(math.sqrt(count)) if count else 1), 4)
+        self._columns = self._max_columns(count, self.size.width)
         grid.styles.grid_size_columns = self._columns
 
         self._cells = [PlotCell("", classes="plot-cell") for _ in range(count)]
@@ -133,6 +146,37 @@ class FarmScreen(Screen):
                 self._paint_cell(index, animate=False)
 
         self._cursor = min(self._cursor, count - 1) if count else 0
+        self._highlight_cursor()
+
+    def _max_columns(self, count: int, available_width: int) -> int:
+        """How many cards fit per row at the current window width.
+
+        Cards keep a fixed size (like the roast screen's cards); it's the
+        column *count* that adapts, wrapping fewer/more per row as the
+        window is resized, capped by how many plots there actually are.
+        """
+        if count <= 0:
+            return 1
+        usable = max(0, available_width - self._FIELD_SIDE_PADDING)
+        fits = max(
+            1,
+            (usable + self._CELL_GUTTER) // (self._CELL_WIDTH + self._CELL_GUTTER),
+        )
+        return max(1, min(count, fits))
+
+    def _sync_field_columns(self) -> None:
+        """Recompute column count on resize (polled on the tick, like
+        `_sync_backdrop` — see CLAUDE.md: no dedicated resize-event
+        plumbing in this app)."""
+        count = len(self._cells)
+        if count == 0:
+            return
+        columns = self._max_columns(count, self.size.width)
+        if columns == self._columns:
+            return
+        self._columns = columns
+        self.query_one("#field", Grid).styles.grid_size_columns = columns
+        self._cursor = min(self._cursor, count - 1)
         self._highlight_cursor()
 
     def _highlight_cursor(self) -> None:

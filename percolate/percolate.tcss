@@ -21,6 +21,15 @@
     text-align: center;
 }
 
+/* Wraps just the backdrop so it can be centered on its own — centering
+   at the FarmScreen level instead would center the *combined* bounding
+   box of every flow child (backdrop + #field), and #field already spans
+   the full width itself, which would cancel the effect out. */
+#backdrop_wrap {
+    height: auto;
+    align: center top;
+}
+
 /* Farm screen backdrop: static, non-interactive landscape art
    (see data/farmhouse.json), size-adaptive per FarmScreen._sync_backdrop. */
 #backdrop {
@@ -33,6 +42,13 @@
     height: auto;
     padding: 1 2;
     grid-gutter: 1 2;
+    /* Columns size to their content (not equal 1fr stretch across the full
+       screen width) so the block of cards hugs its own width; `align`
+       then centers that block within #field, which itself still spans the
+       full screen. Column *count* is recomputed adaptively in
+       FarmScreen._max_columns as the window/plot count changes. */
+    grid-columns: auto;
+    align: center top;
 }
 
 .plot-cell {

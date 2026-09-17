@@ -35,9 +35,10 @@ ROAST_STAGES_PATH = DATA_DIR / "roast_stages.json"
 
 # --- Farm screen backdrop ---------------------------------------------------
 
-# Below this terminal size, the Farm screen shows the compact backdrop
-# instead of the full detailed scene.
-LARGE_BACKDROP_MIN_WIDTH = 100
+# Below this terminal height, the Farm screen shows the compact backdrop
+# instead of the full detailed scene. (Width has no fixed constant — it's
+# derived from the large art's own width in farmhouse.json, see
+# FarmScreen._sync_backdrop.)
 LARGE_BACKDROP_MIN_HEIGHT = 40
 
 # --- Farm defaults -----------------------------------------------------------
