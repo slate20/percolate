@@ -32,6 +32,7 @@ UPGRADES_PATH = DATA_DIR / "upgrades.json"
 PLANT_STAGES_PATH = DATA_DIR / "plant_stages.json"
 FARMHOUSE_PATH = DATA_DIR / "farmhouse.json"
 ROAST_STAGES_PATH = DATA_DIR / "roast_stages.json"
+HELP_GUIDE_PATH = DATA_DIR / "help_guide.md"
 
 # --- Farm screen backdrop ---------------------------------------------------
 

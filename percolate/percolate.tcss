@@ -21,6 +21,16 @@
     text-align: center;
 }
 
+/* Screen-specific hint for Tab-cycling focus between a screen's controls
+   (Market's four lists, Roast's builder panel) — MarketScreen/RoastScreen.
+   Not docked, just an inline line in the normal flow, matching the
+   "hinted inline next to what it acts on" convention rather than a footer. */
+.section-hint {
+    height: 1;
+    color: #808080;
+    margin-bottom: 1;
+}
+
 /* Wraps just the backdrop so it can be centered on its own — centering
    at the FarmScreen level instead would center the *combined* bounding
    box of every flow child (backdrop + #field), and #field already spans
@@ -61,6 +71,13 @@
 
 .plot-cell.cursor {
     border: round gold;
+}
+
+/* (o) toggle on FarmScreen — see FarmScreen.action_toggle_outline. Higher
+   specificity than .plot-cell.cursor above so it wins without touching
+   the "cursor" class itself (still used for the inline (enter) hint). */
+#field.hide-cursor-outline .plot-cell.cursor {
+    border: round grey;
 }
 
 /* Roast screen: three-column layout — a persistent bean/flavor/level
@@ -104,11 +121,16 @@
 }
 
 /* Roaster cards run larger than plot cards — there are always far fewer
-   roaster slots than plots, so each one can afford more visual weight. */
+   roaster slots than plots, so each one can afford more visual weight.
+   height is auto rather than fixed: #roaster_field's Grid sizes each auto
+   row from the actual line count each cell renders (a plain Static's
+   declared `height` isn't consulted for that — see
+   RoastScreen._wrap_header, which pre-wraps long roast names into real
+   newlines so the card grows to fit instead of clipping them). */
 .roast-cell {
     border: round grey;
     width: 33;
-    height: 17;
+    height: auto;
     content-align: center middle;
     text-align: center;
 }
@@ -158,6 +180,31 @@
     max-height: 24;
     padding: 1 2;
     border: round grey;
+}
+
+/* HelpModal — same bounded-popup idea as #picker, but a guide needs more
+   room and its own scrollbar rather than #picker's fixed max-height. */
+#help_picker {
+    width: 76;
+    height: 34;
+    padding: 1 3;
+    border: round grey;
+}
+
+/* UpgradeModal only: title left, gold readout right — see
+   UpgradeModal.compose for why this needs its own gold display. */
+#modal_header {
+    height: auto;
+}
+
+#modal_title {
+    width: 1fr;
+}
+
+#modal_gold {
+    width: auto;
+    color: gold;
+    text-style: bold;
 }
 
 ModalScreen {

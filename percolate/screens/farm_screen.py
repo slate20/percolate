@@ -16,6 +16,7 @@ from textual.widgets import Header, Label, OptionList, Static
 from textual.widgets.option_list import Option
 
 from percolate.config import LARGE_BACKDROP_MIN_HEIGHT, UI_TICK_SECONDS
+from percolate.focus_widgets import FocusHighlightOptionList
 from percolate.screens.upgrade_modal import UpgradeModal
 from percolate.widgets import NAV_HINT, apply_time_of_day
 
@@ -41,7 +42,7 @@ class BeanPickerScreen(ModalScreen[str | None]):
     def compose(self) -> ComposeResult:
         with Vertical(id="picker"):
             yield Label("Choose a seed to plant  (esc to cancel)")
-            yield OptionList(*[Option(label, id=opt_id) for opt_id, label in self._options])
+            yield FocusHighlightOptionList(*[Option(label, id=opt_id) for opt_id, label in self._options])
 
     def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
         self.dismiss(event.option.id)
@@ -66,6 +67,11 @@ class FarmScreen(Screen):
     _CELL_GUTTER = 2
     _FIELD_SIDE_PADDING = 4
 
+    # Header shows "Farm — {gold}g" instead of just the app's "Percolate"
+    # title — Screen.TITLE overrides the app title in Header, while leaving
+    # sub_title unset keeps inheriting the gold readout from PercolateApp.
+    TITLE = "Farm"
+
     BINDINGS = [
         ("up", "move_up", "Up"),
         ("down", "move_down", "Down"),
@@ -73,6 +79,7 @@ class FarmScreen(Screen):
         ("right", "move_right", "Right"),
         ("enter", "interact", "Plant / Harvest"),
         ("u", "show_upgrades", "Upgrades"),
+        ("o", "toggle_outline", "Toggle plot outline"),
     ]
 
     def compose(self) -> ComposeResult:
@@ -85,10 +92,11 @@ class FarmScreen(Screen):
 
     def on_mount(self) -> None:
         self._cells: list[PlotCell] = []
-        self._last_state: list[str | None] = []
+        self._last_stage: list[str | None] = []
         self._columns = 1
         self._cursor = 0
         self._backdrop_variant: str | None = None
+        self._hide_outline = False
         self._build_field()
         self.refresh_plots()
         self._sync_backdrop()
@@ -128,7 +136,7 @@ class FarmScreen(Screen):
         # + fresh instances), even for plots that already existed. So every cell
         # here is a just-mounted widget regardless of what state it previously
         # showed — each gets painted immediately below, with no fade, rather than
-        # carrying over old _last_state (which would wrongly mark it as "changed"
+        # carrying over old _last_stage (which would wrongly mark it as "changed"
         # and trigger an animation on a widget that was mounted in this same tick).
         farm = self.app.farm
         grid = self.query_one("#field", Grid)
@@ -139,7 +147,7 @@ class FarmScreen(Screen):
         grid.styles.grid_size_columns = self._columns
 
         self._cells = [PlotCell("", classes="plot-cell") for _ in range(count)]
-        self._last_state = [None] * count
+        self._last_stage = [None] * count
         if self._cells:
             grid.mount(*self._cells)
             for index in range(count):
@@ -225,6 +233,7 @@ class FarmScreen(Screen):
 
         if plot.is_empty:
             state = "empty"
+            art_stage = "empty"
             header = f"Plot {index + 1}"
             art = plant_stages["empty"]
             footer = "(enter) plant" if cursored else "— empty —"
@@ -232,6 +241,7 @@ class FarmScreen(Screen):
             bean = beans[plot.bean_id]
             progress = plot.progress(now)
             stage = bean.stage_for_progress(progress)
+            art_stage = stage
             art = plant_stages[stage]
             header = f"Plot {index + 1}: {bean.name}"
             if plot.is_ready(now):
@@ -243,21 +253,34 @@ class FarmScreen(Screen):
                 footer = f"{stage.upper()}  {_format_remaining(remaining)}"
 
         text = header + "\n" + "\n".join(art) + "\n" + footer
-        return text, state
+        return text, state, art_stage
 
     def _paint_cell(self, index: int, animate: bool) -> None:
         cell = self._cells[index]
-        text, state = self._cell_content(index)
+        text, state, art_stage = self._cell_content(index)
         cell.update(text)
         cell.set_classes(f"plot-cell state-{state}")
 
-        changed = self._last_state[index] is not None and self._last_state[index] != state
+        # Fades on an actual growth-stage change (seed -> sprout -> growing
+        # -> ready), tracked via the fine-grained art stage rather than the
+        # coarser `state` color bucket used above — early -> mid used to be
+        # the only bucket boundary crossed, so seed -> sprout never faded.
+        # Explicitly excluded whenever either side is "empty": planting and
+        # harvesting are immediate player actions, not passive growth, and
+        # shouldn't get the slow fade (see playtest_notes.md).
+        last_stage = self._last_stage[index]
+        changed = (
+            last_stage is not None
+            and last_stage != art_stage
+            and last_stage != "empty"
+            and art_stage != "empty"
+        )
         if animate and changed:
             cell.styles.opacity = 0.0
             cell.styles.animate("opacity", value=1.0, duration=1.2)
         else:
             cell.styles.opacity = 1.0
-        self._last_state[index] = state
+        self._last_stage[index] = art_stage
 
     def refresh_plots(self) -> None:
         farm = self.app.farm
@@ -314,3 +337,14 @@ class FarmScreen(Screen):
         self.app.push_screen(
             UpgradeModal("Farm Upgrades", ["plot_expansion", "soil_quality"]), handle_result
         )
+
+    def action_toggle_outline(self) -> None:
+        # Purely a viewing/screenshot preference (see playtest_notes.md) —
+        # the cursor itself still moves and still gates (enter), only the
+        # gold border cue is hidden. CSS-only: toggling a class on #field
+        # overrides .plot-cell.cursor's border back to plain grey, so
+        # _highlight_cursor's own "cursor" class logic doesn't need to
+        # change at all.
+        self._hide_outline = not self._hide_outline
+        self.query_one("#field", Grid).set_class(self._hide_outline, "hide-cursor-outline")
+        self.notify("Plot outline hidden" if self._hide_outline else "Plot outline shown")

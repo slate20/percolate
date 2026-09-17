@@ -20,8 +20,10 @@ Three-column layout, not a copy of the Farm screen's plot grid:
 from __future__ import annotations
 
 import math
+import textwrap
 import time
 
+from textual import events
 from textual.app import ComposeResult
 from textual.containers import Grid, Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
@@ -30,6 +32,7 @@ from textual.widgets.option_list import Option
 from textual.widgets.selection_list import Selection
 
 from percolate.config import UI_TICK_SECONDS
+from percolate.focus_widgets import FocusHighlightOptionList, FocusHighlightSelectionList
 from percolate.models.roast import DEFAULT_ROAST_DURATION, resolve_roast
 from percolate.screens.upgrade_modal import UpgradeModal
 from percolate.widgets import NAV_HINT, apply_time_of_day
@@ -72,6 +75,13 @@ class RoastCell(Static):
 
 
 class RoastScreen(Screen):
+    # Must match .roast-cell in percolate.tcss: card width (33) minus its
+    # 1-column border on each side.
+    _CARD_TEXT_WIDTH = 31
+
+    # See FarmScreen.TITLE.
+    TITLE = "Roasting"
+
     BINDINGS = [
         ("s", "start_roast", "Start Roast"),
         ("c", "collect_ready", "Collect"),
@@ -83,12 +93,16 @@ class RoastScreen(Screen):
         yield Static("(u) Upgrades", id="tint_bar", classes="tint-bar")
         with Horizontal(id="roast_layout"):
             with Vertical(id="builder_panel"):
+                # Same reasoning as MarketScreen's hint (see market_screen.py):
+                # the builder panel's 4 fields rely on Textual's default
+                # Tab-cycling focus, which isn't obvious to a non-dev player.
+                yield Static("(tab) next field   (shift+tab) previous", classes="section-hint")
                 yield Label("Bean", classes="builder-heading")
-                yield OptionList(id="bean_list")
+                yield FocusHighlightOptionList(id="bean_list")
                 yield Label("Flavor", id="flavor_heading", classes="builder-heading")
-                yield SelectionList(id="flavor_list")
+                yield FocusHighlightSelectionList(id="flavor_list")
                 yield Label("Roast Level", classes="builder-heading")
-                yield OptionList(
+                yield FocusHighlightOptionList(
                     *[Option(label, id=opt_id) for opt_id, label in ROAST_LEVELS],
                     id="level_list",
                 )
@@ -107,9 +121,6 @@ class RoastScreen(Screen):
         self._selected_bean_id: str | None = None
         self._selected_level: str | None = "medium"
 
-        level_list = self.query_one("#level_list", OptionList)
-        level_list.highlighted = 1  # "medium" — a sensible default, no urgency to pick
-
         self._build_field()
         self.refresh_builder()
         self.refresh_batches()
@@ -126,7 +137,31 @@ class RoastScreen(Screen):
         self.refresh_batches()
         apply_time_of_day(self.query_one("#tint_bar", Static))
 
+    def on_descendant_focus(self, event: events.DescendantFocus) -> None:
+        # Bean and Roast Level aren't plain browsing lists — their
+        # highlight is the only visual indicator of a persistent choice
+        # (which bean/level the next roast uses), so on focus they should
+        # show *that* selection rather than the generic "first item"
+        # default the FocusHighlightOptionList mixin applies to every other
+        # list. See playtest_notes.md.
+        if event.widget.id in ("bean_list", "level_list"):
+            self._sync_selection_highlight(event.widget.id)
+
     # --- Builder (left panel) -------------------------------------------
+
+    def _sync_selection_highlight(self, widget_id: str) -> None:
+        if widget_id == "bean_list":
+            bean_list = self.query_one("#bean_list", OptionList)
+            owned_bean_ids = [
+                b_id for b_id, count in self.app.farm.raw_bean_inventory.items() if count > 0
+            ]
+            if self._selected_bean_id in owned_bean_ids:
+                bean_list.highlighted = owned_bean_ids.index(self._selected_bean_id)
+        elif widget_id == "level_list":
+            level_list = self.query_one("#level_list", OptionList)
+            level_ids = [opt_id for opt_id, _ in ROAST_LEVELS]
+            if self._selected_level in level_ids:
+                level_list.highlighted = level_ids.index(self._selected_level)
 
     def refresh_builder(self) -> None:
         farm = self.app.farm
@@ -141,8 +176,12 @@ class RoastScreen(Screen):
             bean_list.add_option(Option(f"{beans[bean_id].name} (own {count})", id=bean_id))
         if self._selected_bean_id not in owned_bean_ids:
             self._selected_bean_id = owned_bean_ids[0] if owned_bean_ids else None
-        if self._selected_bean_id is not None:
-            bean_list.highlighted = owned_bean_ids.index(self._selected_bean_id)
+        # Only reassert the highlight while focused — clear_options() resets
+        # it to None regardless, and if bean_list isn't focused it should
+        # stay cleared (see FocusHighlightOptionList / on_descendant_focus)
+        # rather than being force-shown independent of Tab focus.
+        if bean_list.has_focus:
+            self._sync_selection_highlight("bean_list")
 
         max_flavors = farm.max_ingredients(self.app.upgrades_data)
         flavor_heading = self.query_one("#flavor_heading", Label)
@@ -157,6 +196,9 @@ class RoastScreen(Screen):
             have = farm.ingredient_inventory.get(ingredient.id, 0)
             if have > 0:
                 flavor_list.add_option(Selection(f"{ingredient.name} (own {have})", ingredient.id))
+        # Plain browsing list (no persistent-choice concept like bean/level
+        # above) — the generic first-item default is fine here.
+        flavor_list.sync_focus_highlight()
 
         self._update_status()
 
@@ -281,21 +323,43 @@ class RoastScreen(Screen):
         else:
             batch = farm.roast_batches[index]
             bean = beans[batch.bean_id]
-            flavor = ", ".join(ingredients[i].name for i in batch.ingredient_ids) or "plain"
+            batch_ingredients = [ingredients[i] for i in batch.ingredient_ids]
+            # Same resolve_roast preview the builder panel uses (see
+            # _update_status) — shows the curated name if this combo matches
+            # a recipe, otherwise the generated "Bean Level Flavor" name, so
+            # a slot's label always identifies exactly what's roasting.
+            preview = resolve_roast(bean, batch_ingredients, batch.roast_level, self.app.recipes)
             progress = batch.progress(now)
             is_ready = batch.is_ready(now)
             state = _roast_state(progress, is_ready)
-            header = f"Slot {index + 1}: {bean.name} ({flavor})"
+            header = self._wrap_header(f"Slot {index + 1}: {preview.name}")
             if is_ready:
                 footer = "READY — click or (c)"
             else:
                 remaining = batch.process.duration - batch.process.elapsed(now)
-                footer = f"{batch.roast_level.upper()} {state.upper()}  {_format_remaining(remaining)}"
+                footer = f"{_format_remaining(remaining)} remaining"
 
         frames = roast_stages[state]
         frame = frames[int(now // UI_TICK_SECONDS) % len(frames)]
-        text = header + "\n" + "\n".join(frame) + "\n" + footer
+        # Blank line between header and art: breathing room so a wrapped
+        # two-line name doesn't butt straight up against the roaster art.
+        text = header + "\n\n" + "\n".join(frame) + "\n" + footer
         return text, state
+
+    def _wrap_header(self, text: str) -> str:
+        """Wrap a slot header to the card's text width instead of letting a
+        long roast name (bean + level + flavors, or a curated recipe name)
+        silently overflow — a plain Static doesn't reflow text on its own,
+        it just clips whatever doesn't fit the widget's width. Capped at 2
+        lines to match the card's art budget; recipes/beans/ingredients are
+        content-extensible (see CLAUDE.md), so a future combo could in
+        theory exceed that, hence the ellipsis fallback.
+        """
+        lines = textwrap.wrap(text, width=self._CARD_TEXT_WIDTH) or [text]
+        if len(lines) > 2:
+            lines = lines[:2]
+            lines[-1] = lines[-1][: self._CARD_TEXT_WIDTH - 1].rstrip() + "…"
+        return "\n".join(lines)
 
     def _paint_cell(self, index: int, animate: bool) -> None:
         cell = self._cells[index]

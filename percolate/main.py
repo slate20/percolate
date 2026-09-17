@@ -13,6 +13,7 @@ from percolate.models.roast import (
     load_roast_stage_art,
 )
 from percolate.screens.farm_screen import FarmScreen
+from percolate.screens.help_modal import HelpModal
 from percolate.screens.market_screen import MarketScreen
 from percolate.screens.roast_screen import RoastScreen
 from percolate.theme import PERCOLATE_LATTE, PERCOLATE_THEMES
@@ -39,6 +40,7 @@ class PercolateApp(App):
         ("f", "show_screen('farm')", "Farm"),
         ("r", "show_screen('roast')", "Roast"),
         ("m", "show_screen('market')", "Market"),
+        ("h", "show_help", "Help"),
         ("q", "quit", "Quit"),
     ]
 
@@ -71,6 +73,9 @@ class PercolateApp(App):
 
     def action_show_screen(self, name: str) -> None:
         self.switch_screen(name)
+
+    def action_show_help(self) -> None:
+        self.push_screen(HelpModal())
 
     def action_quit(self) -> None:
         self.farm.save_to_disk()

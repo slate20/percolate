@@ -19,7 +19,7 @@ from percolate.config import FARMHOUSE_PATH
 # Textual's default Footer, which lists every binding (including each
 # screen's own contextual actions) as loud key-chips. Screen-specific
 # actions are hinted inline instead, next to the control they affect.
-NAV_HINT = "f Farm    r Roast    m Market    q Quit"
+NAV_HINT = "f Farm    r Roast    m Market    h Help    q Quit"
 
 
 def load_farmhouse_data(path=FARMHOUSE_PATH) -> dict:
