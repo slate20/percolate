@@ -7,3 +7,4 @@ build/
 dist/
 .pytest_cache/
 docs/
+CLAUDE.md
