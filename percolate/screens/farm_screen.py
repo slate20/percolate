@@ -10,12 +10,13 @@ from __future__ import annotations
 import time
 
 from textual.app import ComposeResult
-from textual.containers import Container, Grid, Vertical
+from textual.containers import Grid, ScrollableContainer, Vertical
 from textual.screen import ModalScreen, Screen
 from textual.widgets import Header, Label, OptionList, Static
 from textual.widgets.option_list import Option
 
-from percolate.config import LARGE_BACKDROP_MIN_HEIGHT, UI_TICK_SECONDS
+from percolate.backdrop_compositor import composite_backdrop, resolve_tiers
+from percolate.config import UI_TICK_SECONDS
 from percolate.focus_widgets import FocusHighlightOptionList
 from percolate.screens.upgrade_modal import UpgradeModal
 from percolate.widgets import NAV_HINT, apply_time_of_day
@@ -66,6 +67,10 @@ class FarmScreen(Screen):
     _CELL_WIDTH = 21
     _CELL_GUTTER = 2
     _FIELD_SIDE_PADDING = 4
+    # Capped so the max plot count (8, via plot_expansion's tiers) always
+    # lays out as a symmetrical 4x2 rather than however many columns happen
+    # to fit a wide terminal (e.g. all 8 in one row).
+    _MAX_COLUMNS = 4
 
     # Header shows "Farm — {gold}g" instead of just the app's "Percolate"
     # title — Screen.TITLE overrides the app title in Header, while leaving
@@ -84,7 +89,7 @@ class FarmScreen(Screen):
 
     def compose(self) -> ComposeResult:
         yield Header()
-        with Container(id="backdrop_wrap"):
+        with ScrollableContainer(id="backdrop_wrap", can_focus=False):
             yield Backdrop(id="backdrop")
         yield Static("(u) Upgrades", id="tint_bar", classes="tint-bar")
         yield Grid(id="field")
@@ -95,41 +100,42 @@ class FarmScreen(Screen):
         self._last_stage: list[str | None] = []
         self._columns = 1
         self._cursor = 0
-        self._backdrop_variant: str | None = None
         self._hide_outline = False
         self._build_field()
         self.refresh_plots()
-        self._sync_backdrop()
+        self._render_backdrop()
+        self.call_after_refresh(self._center_on_house)
         apply_time_of_day(self.query_one("#tint_bar", Static))
         self.set_interval(UI_TICK_SECONDS, self.tick)
 
     def on_screen_resume(self) -> None:
         self.refresh_plots()
-        self._sync_backdrop()
         self._sync_field_columns()
+        self._render_backdrop()
+        self.call_after_refresh(self._center_on_house)
 
     def tick(self) -> None:
         self.refresh_plots()
-        self._sync_backdrop()
         self._sync_field_columns()
         apply_time_of_day(self.query_one("#tint_bar", Static))
 
-    def _sync_backdrop(self) -> None:
-        width, height = self.size.width, self.size.height
-        # Width threshold tracks the large art's own width (from
-        # farmhouse.json) plus 1 cell of padding on each side, rather than
-        # a fixed constant, so it stays correct if that art is ever resized.
-        large_width = self.app.farmhouse_data["large"]["width"] + 2
-        variant = (
-            "large"
-            if width >= large_width and height >= LARGE_BACKDROP_MIN_HEIGHT
-            else "compact"
+    def _render_backdrop(self) -> None:
+        tier_by_slot = resolve_tiers(self.app.farmhouse_data, self.app.farm, self.app.upgrades_data)
+        composited = composite_backdrop(self.app.farmhouse_data, tier_by_slot)
+        self.query_one("#backdrop", Backdrop).update(composited)
+
+    def _center_on_house(self) -> None:
+        # Default view centers on the house slot, per docs/north_star.md —
+        # a no-op if "house" isn't in the current farmhouse_data.
+        house = next(
+            (s for s in self.app.farmhouse_data["slots"] if s["id"] == "house"), None
         )
-        if variant == self._backdrop_variant:
+        if house is None:
             return
-        self._backdrop_variant = variant
-        data = self.app.farmhouse_data[variant]
-        self.query_one("#backdrop", Backdrop).update("\n".join(data["art"]))
+        container = self.query_one("#backdrop_wrap", ScrollableContainer)
+        target_x = house["col"] + house["width"] / 2 - container.size.width / 2
+        target_y = house["row"] + house["height"] / 2 - container.size.height / 2
+        container.scroll_to(x=max(0, target_x), y=max(0, target_y), animate=False)
 
     def _build_field(self) -> None:
         # Rebuilds recreate every PlotCell widget from scratch (grid.remove_children
@@ -170,7 +176,7 @@ class FarmScreen(Screen):
             1,
             (usable + self._CELL_GUTTER) // (self._CELL_WIDTH + self._CELL_GUTTER),
         )
-        return max(1, min(count, fits))
+        return max(1, min(count, fits, self._MAX_COLUMNS))
 
     def _sync_field_columns(self) -> None:
         """Recompute column count on resize (polled on the tick, like
@@ -333,6 +339,7 @@ class FarmScreen(Screen):
         def handle_result(purchased: bool | None) -> None:
             if purchased:
                 self.refresh_plots()
+                self._render_backdrop()
 
         self.app.push_screen(
             UpgradeModal("Farm Upgrades", ["plot_expansion", "soil_quality"]), handle_result

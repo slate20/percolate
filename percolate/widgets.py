@@ -7,12 +7,9 @@ slow: a single drifting glyph, advanced once per caller-controlled tick.
 
 from __future__ import annotations
 
-import json
 import time
 
 from textual.widgets import Static
-
-from percolate.config import FARMHOUSE_PATH
 
 # The only hints that apply everywhere, everywhere: which key switches to
 # which screen. Rendered as one slim, muted line per screen instead of
@@ -20,12 +17,6 @@ from percolate.config import FARMHOUSE_PATH
 # screen's own contextual actions) as loud key-chips. Screen-specific
 # actions are hinted inline instead, next to the control they affect.
 NAV_HINT = "f Farm    r Roast    m Market    h Help    q Quit"
-
-
-def load_farmhouse_data(path=FARMHOUSE_PATH) -> dict:
-    """Backdrop scene variants ("compact" / "large") for FarmScreen."""
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
 
 
 class AmbientBar(Static):

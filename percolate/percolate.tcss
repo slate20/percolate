@@ -34,17 +34,31 @@
 /* Wraps just the backdrop so it can be centered on its own — centering
    at the FarmScreen level instead would center the *combined* bounding
    box of every flow child (backdrop + #field), and #field already spans
-   the full width itself, which would cancel the effect out. */
+   the full width itself, which would cancel the effect out.
+   Scrollable so terminals smaller than the fixed canvas can pan around it
+   via mouse wheel / scrollbar drag only (the widget is mounted with
+   can_focus=False in FarmScreen.compose, so it never captures the
+   plot-grid's arrow-key cursor bindings). Capped at the canvas's own
+   height so it never crowds out the plot grid below it on tall terminals. */
 #backdrop_wrap {
     height: auto;
+    max-height: 21;
     align: center top;
 }
 
-/* Farm screen backdrop: static, non-interactive landscape art
-   (see data/farmhouse.json), size-adaptive per FarmScreen._sync_backdrop. */
+/* Farm screen backdrop: fixed-size canvas (must match data/farmhouse.json's
+   "canvas" block), assembled once at mount by
+   backdrop_compositor.composite_backdrop — no longer size-adaptive.
+   Textual's `width`/`height` are border-box sizes including padding, so
+   both dimensions below need the padding added on top of the canvas's own
+   80x20 (canvas width + 2 left padding, canvas height + 1 top padding) —
+   otherwise text wraps/clips: a too-narrow content width silently wraps
+   any row whose rightmost columns hold real glyphs (not blank filler)
+   onto an extra line, which then pushes the fixed-height box's last rows
+   off screen entirely. */
 #backdrop {
-    height: auto;
-    width: auto;
+    width: 82;
+    height: 21;
     padding: 1 0 0 2;
 }
 

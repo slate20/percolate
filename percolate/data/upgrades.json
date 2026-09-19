@@ -4,9 +4,9 @@
     "name": "Plot Expansion",
     "description": "Add more plots to the field.",
     "tiers": [
-      {"cost": 300, "plots_added": 2},
+      {"cost": 300, "plots_added": 1},
       {"cost": 900, "plots_added": 2},
-      {"cost": 2500, "plots_added": 4}
+      {"cost": 2500, "plots_added": 2}
     ]
   },
   "soil_quality": {

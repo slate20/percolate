@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from textual.app import App
 
+from percolate.backdrop_compositor import load_farmhouse_data
 from percolate.config import DEV_MODE, PACKAGE_DIR, UI_TICK_SECONDS
 from percolate.models.bean import load_bean_registry, load_plant_stage_art
 from percolate.models.farm import Farm, load_upgrades_data
@@ -17,7 +18,6 @@ from percolate.screens.help_modal import HelpModal
 from percolate.screens.market_screen import MarketScreen
 from percolate.screens.roast_screen import RoastScreen
 from percolate.theme import PERCOLATE_LATTE, PERCOLATE_THEMES
-from percolate.widgets import load_farmhouse_data
 
 
 class PercolateApp(App):
