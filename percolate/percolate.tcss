@@ -238,15 +238,15 @@ ModalScreen {
 /* Plot / batch state colors — dim when empty or just starting,
    warming with progress, bright at ready. */
 .state-empty {
-    color: grey;
+    color: #8f857c;
 }
 
 .state-early {
-    color: darkgreen;
+    color: #6b8e4e;
 }
 
 .state-mid {
-    color: darkorange;
+    color: #d1a26d;
 }
 
 .state-ready {
