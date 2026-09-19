@@ -1,4 +1,5 @@
 # Percolate
+<img width="1354" height="880" alt="image" src="https://github.com/user-attachments/assets/c9b2d3a4-29ae-428b-be46-e2dcc7752c9b" />
 
 A cozy, low-attention terminal coffee farm & roastery, built with [Textual](https://textual.textualize.io/) and Python 3.10+.
 
