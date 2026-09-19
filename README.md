@@ -68,9 +68,10 @@ These rewind timer start times rather than touching the system clock, so they on
 
 ```bash
 pip install -e ".[build]"
-pyinstaller percolate.spec
+./build.sh      # Linux/WSL/macOS
+.\build.ps1     # Windows
 ```
 
-This is how the [Releases](../../releases) builds are produced. PyInstaller can't cross-compile, so build on whichever OS you want an executable for. It produces `dist/percolate/` — a whole folder (onedir build, not a single file) containing `percolate` (or `percolate.exe` on Windows) plus its bundled data/CSS/runtime. Ship the whole folder; the executable depends on the rest of it.
+This is how the [Releases](../../releases) builds are produced. PyInstaller can't cross-compile, so build on whichever OS you want an executable for. The `build.sh`/`build.ps1` wrapper just runs `pyinstaller percolate.spec --distpath dist/<os> --workpath build/<os>` — the `--distpath`/`--workpath` flags keep builds for different platforms from overwriting each other when run against the same checkout (e.g. Windows + WSL), and have to be passed on the command line since PyInstaller reads its output location from internal config set before the spec file runs, not from anything settable inside the spec itself. It produces `dist/<os>/percolate/` — a whole folder (onedir build, not a single file) containing `percolate` (or `percolate.exe` on Windows) plus its bundled data/CSS/runtime. Ship the whole `percolate/` folder; the executable depends on the rest of it.
 
 State still saves to `~/.config/percolate/state.json` (or the OS equivalent) regardless of how it was launched.

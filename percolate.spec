@@ -5,11 +5,19 @@
 # for a .app-less binary, on Linux for an ELF binary):
 #
 #   pip install pyinstaller
-#   pyinstaller percolate.spec
+#   pyinstaller percolate.spec --distpath dist/<os> --workpath build/<os>
 #
-# Output lands in dist/percolate/ (onedir build — faster startup than
+# The --distpath/--workpath flags (e.g. dist/windows, dist/linux) keep a
+# Windows build and a WSL/Linux build of the same checkout from overwriting
+# each other. They have to be passed on the command line, not set from
+# inside the spec: COLLECT/EXE read their output location from PyInstaller's
+# internal CONF['distpath']/CONF['workpath'], not from spec-local variables,
+# so reassigning DISTPATH/workpath in this file has no effect on where the
+# build actually lands.
+#
+# Output lands in dist/<os>/percolate/ (onedir build — faster startup than
 # onefile, which matters for a TUI you might reopen often; ship the whole
-# dist/percolate/ folder together, not just the executable inside it).
+# percolate/ folder together, not just the executable inside it).
 
 from PyInstaller.utils.hooks import collect_data_files
 
