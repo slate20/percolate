@@ -9,9 +9,16 @@ tasks:
       DISTPATH: dist/{{OS}}
     cmds:
       - uv sync --extra build
-      - uv run pyinstaller percolate.spec --distpath {{.DISTPATH}} --workpath build/{{OS}}
+      - uv run pyinstaller percolate.spec --noconfirm --distpath {{.DISTPATH}} --workpath build/{{OS}}
       - tar -czf {{.DISTPATH}}/percolate-{{OS}}.tar.gz -C {{.DISTPATH}} percolate
       - echo "Packaged {{.DISTPATH}}/percolate-{{OS}}.tar.gz"
+
+  install:
+    desc: Binary nach ~/bin installieren
+    deps: [build]
+    cmds:
+      - cp -r dist/{{OS}}/percolate/. "$HOME/bin/"
+      - echo "Installed to $HOME/bin/percolate"
 
   lint:
     desc: ruff check ausführen
