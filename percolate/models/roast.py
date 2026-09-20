@@ -13,7 +13,12 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass, field
 
-from percolate.config import INGREDIENTS_PATH, RECIPES_PATH, ROAST_BASE_MULTIPLIER, ROAST_STAGES_PATH
+from percolate.config import (
+    INGREDIENTS_PATH,
+    RECIPES_PATH,
+    ROAST_BASE_MULTIPLIER,
+    ROAST_STAGES_PATH,
+)
 from percolate.models.bean import Bean
 from percolate.models.timed_process import TimedProcess
 
@@ -28,11 +33,18 @@ class Ingredient:
     value: int  # contribution to a roasted product's compositional value
 
     def to_dict(self) -> dict:
-        return {"id": self.id, "name": self.name, "cost": self.cost, "value": self.value}
+        return {
+            "id": self.id,
+            "name": self.name,
+            "cost": self.cost,
+            "value": self.value,
+        }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Ingredient":
-        return cls(id=data["id"], name=data["name"], cost=data["cost"], value=data["value"])
+    def from_dict(cls, data: dict) -> Ingredient:
+        return cls(
+            id=data["id"], name=data["name"], cost=data["cost"], value=data["value"]
+        )
 
 
 @dataclass
@@ -44,7 +56,9 @@ class Recipe:
     roast_level: str
     bonus_multiplier: float
 
-    def matches(self, bean_id: str, ingredient_ids: list[str], roast_level: str) -> bool:
+    def matches(
+        self, bean_id: str, ingredient_ids: list[str], roast_level: str
+    ) -> bool:
         return (
             self.bean == bean_id
             and self.roast_level == roast_level
@@ -52,7 +66,7 @@ class Recipe:
         )
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Recipe":
+    def from_dict(cls, data: dict) -> Recipe:
         return cls(
             id=data["id"],
             name=data["name"],
@@ -104,7 +118,9 @@ def resolve_roast(
     roast_level: str,
     recipes: dict[str, Recipe],
 ) -> RoastResult:
-    base_value = bean.raw_sell_value * ROAST_BASE_MULTIPLIER + sum(i.value for i in ingredients)
+    base_value = bean.raw_sell_value * ROAST_BASE_MULTIPLIER + sum(
+        i.value for i in ingredients
+    )
 
     ingredient_ids = [i.id for i in ingredients]
     for recipe in recipes.values():
@@ -146,7 +162,7 @@ class RoastBatch:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "RoastBatch":
+    def from_dict(cls, data: dict) -> RoastBatch:
         process = data.get("process")
         return cls(
             bean_id=data["bean_id"],

@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from textual.app import App
+from textual.screen import Screen
 
 from percolate.backdrop_compositor import load_farmhouse_data
 from percolate.config import DEV_MODE, PACKAGE_DIR, UI_TICK_SECONDS
@@ -30,13 +33,13 @@ class PercolateApp(App):
     # real, on-disk package directory whether running from source or frozen.
     _BASE_PATH = str(PACKAGE_DIR / "main.py")
 
-    SCREENS = {
+    SCREENS: ClassVar[dict[str, type[Screen]]] = {
         "farm": FarmScreen,
         "roast": RoastScreen,
         "market": MarketScreen,
     }
 
-    BINDINGS = [
+    BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
         ("f", "show_screen('farm')", "Farm"),
         ("r", "show_screen('roast')", "Roast"),
         ("m", "show_screen('market')", "Market"),

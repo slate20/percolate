@@ -44,7 +44,7 @@ class Plot:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Plot":
+    def from_dict(cls, data: dict) -> Plot:
         process = data.get("process")
         return cls(
             bean_id=data.get("bean_id"),

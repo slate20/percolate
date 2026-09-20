@@ -22,6 +22,7 @@ from __future__ import annotations
 import math
 import textwrap
 import time
+from typing import ClassVar
 
 from textual import events
 from textual.app import ComposeResult
@@ -32,7 +33,10 @@ from textual.widgets.option_list import Option
 from textual.widgets.selection_list import Selection
 
 from percolate.config import UI_TICK_SECONDS
-from percolate.focus_widgets import FocusHighlightOptionList, FocusHighlightSelectionList
+from percolate.focus_widgets import (
+    FocusHighlightOptionList,
+    FocusHighlightSelectionList,
+)
 from percolate.models.roast import DEFAULT_ROAST_DURATION, resolve_roast
 from percolate.screens.upgrade_modal import UpgradeModal
 from percolate.widgets import NAV_HINT, apply_time_of_day
@@ -82,7 +86,7 @@ class RoastScreen(Screen):
     # See FarmScreen.TITLE.
     TITLE = "Roasting"
 
-    BINDINGS = [
+    BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
         ("s", "start_roast", "Start Roast"),
         ("c", "collect_ready", "Collect"),
         ("u", "show_upgrades", "Upgrades"),
@@ -96,7 +100,9 @@ class RoastScreen(Screen):
                 # Same reasoning as MarketScreen's hint (see market_screen.py):
                 # the builder panel's 4 fields rely on Textual's default
                 # Tab-cycling focus, which isn't obvious to a non-dev player.
-                yield Static("(tab) next field   (shift+tab) previous", classes="section-hint")
+                yield Static(
+                    "(tab) next field   (shift+tab) previous", classes="section-hint"
+                )
                 yield Label("Bean", classes="builder-heading")
                 yield FocusHighlightOptionList(id="bean_list")
                 yield Label("Flavor", id="flavor_heading", classes="builder-heading")
@@ -153,7 +159,9 @@ class RoastScreen(Screen):
         if widget_id == "bean_list":
             bean_list = self.query_one("#bean_list", OptionList)
             owned_bean_ids = [
-                b_id for b_id, count in self.app.farm.raw_bean_inventory.items() if count > 0
+                b_id
+                for b_id, count in self.app.farm.raw_bean_inventory.items()
+                if count > 0
             ]
             if self._selected_bean_id in owned_bean_ids:
                 bean_list.highlighted = owned_bean_ids.index(self._selected_bean_id)
@@ -170,10 +178,14 @@ class RoastScreen(Screen):
 
         bean_list = self.query_one("#bean_list", OptionList)
         bean_list.clear_options()
-        owned_bean_ids = [b_id for b_id, count in farm.raw_bean_inventory.items() if count > 0]
+        owned_bean_ids = [
+            b_id for b_id, count in farm.raw_bean_inventory.items() if count > 0
+        ]
         for bean_id in owned_bean_ids:
             count = farm.raw_bean_inventory[bean_id]
-            bean_list.add_option(Option(f"{beans[bean_id].name} (own {count})", id=bean_id))
+            bean_list.add_option(
+                Option(f"{beans[bean_id].name} (own {count})", id=bean_id)
+            )
         if self._selected_bean_id not in owned_bean_ids:
             self._selected_bean_id = owned_bean_ids[0] if owned_bean_ids else None
         # Only reassert the highlight while focused — clear_options() resets
@@ -195,22 +207,32 @@ class RoastScreen(Screen):
         for ingredient in ingredients.values():
             have = farm.ingredient_inventory.get(ingredient.id, 0)
             if have > 0:
-                flavor_list.add_option(Selection(f"{ingredient.name} (own {have})", ingredient.id))
+                flavor_list.add_option(
+                    Selection(f"{ingredient.name} (own {have})", ingredient.id)
+                )
         # Plain browsing list (no persistent-choice concept like bean/level
         # above) — the generic first-item default is fine here.
         flavor_list.sync_focus_highlight()
 
         self._update_status()
 
-    def on_selection_list_selection_toggled(self, event: SelectionList.SelectionToggled) -> None:
+    def on_selection_list_selection_toggled(
+        self, event: SelectionList.SelectionToggled
+    ) -> None:
         flavor_list = event.selection_list
         max_flavors = self.app.farm.max_ingredients(self.app.upgrades_data)
-        if event.selection.value in flavor_list.selected and len(flavor_list.selected) > max_flavors:
+        if (
+            event.selection.value in flavor_list.selected
+            and len(flavor_list.selected) > max_flavors
+        ):
             flavor_list.deselect(event.selection.value)
             if max_flavors == 0:
                 self.notify("Buy an Infuser (u) to add flavors.", severity="warning")
             else:
-                self.notify(f"Infuser only allows {max_flavors} flavor(s) per roast.", severity="warning")
+                self.notify(
+                    f"Infuser only allows {max_flavors} flavor(s) per roast.",
+                    severity="warning",
+                )
 
     def _current_ingredients(self) -> list:
         flavor_list = self.query_one("#flavor_list", SelectionList)
@@ -227,7 +249,9 @@ class RoastScreen(Screen):
 
         bean = self.app.beans[self._selected_bean_id]
         ingredients = self._current_ingredients()
-        preview = resolve_roast(bean, ingredients, self._selected_level, self.app.recipes)
+        preview = resolve_roast(
+            bean, ingredients, self._selected_level, self.app.recipes
+        )
         flavor = ", ".join(i.name for i in ingredients) or "plain"
         discovered = "✓ curated" if preview.recipe_id else ""
         status.update(
@@ -242,7 +266,9 @@ class RoastScreen(Screen):
             self._selected_level = event.option.id
         self._update_status()
 
-    def on_selection_list_selected_changed(self, event: SelectionList.SelectedChanged) -> None:
+    def on_selection_list_selected_changed(
+        self, event: SelectionList.SelectedChanged
+    ) -> None:
         self._update_status()
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
@@ -259,7 +285,9 @@ class RoastScreen(Screen):
             return
         capacity = farm.max_roast_slots(self.app.upgrades_data)
         if capacity == 0:
-            self.notify("No roaster yet — buy one from Upgrades (u).", severity="warning")
+            self.notify(
+                "No roaster yet — buy one from Upgrades (u).", severity="warning"
+            )
             return
         if len(farm.roast_batches) >= capacity:
             self.notify("All roaster slots are busy.", severity="warning")
@@ -270,7 +298,9 @@ class RoastScreen(Screen):
         bonus = farm.roast_speed_bonus(self.app.upgrades_data)
         duration = DEFAULT_ROAST_DURATION * (1 - bonus)
         try:
-            farm.start_roast(bean, ingredients, self._selected_level, duration, time.time())
+            farm.start_roast(
+                bean, ingredients, self._selected_level, duration, time.time()
+            )
             farm.save_to_disk()
             self.notify(f"Roasting {bean.name}...")
         except ValueError as exc:
@@ -300,7 +330,9 @@ class RoastScreen(Screen):
         if count == 0:
             self._cells = []
             self._last_state = []
-            grid.mount(Static("No roaster yet.\n\n(u) Upgrades to build one.", id="no_roaster"))
+            grid.mount(
+                Static("No roaster yet.\n\n(u) Upgrades to build one.", id="no_roaster")
+            )
             return
 
         self._cells = [RoastCell(i, "", classes="roast-cell") for i in range(count)]
@@ -328,7 +360,9 @@ class RoastScreen(Screen):
             # _update_status) — shows the curated name if this combo matches
             # a recipe, otherwise the generated "Bean Level Flavor" name, so
             # a slot's label always identifies exactly what's roasting.
-            preview = resolve_roast(bean, batch_ingredients, batch.roast_level, self.app.recipes)
+            preview = resolve_roast(
+                bean, batch_ingredients, batch.roast_level, self.app.recipes
+            )
             progress = batch.progress(now)
             is_ready = batch.is_ready(now)
             state = _roast_state(progress, is_ready)
@@ -367,7 +401,9 @@ class RoastScreen(Screen):
         cell.update(text)
         cell.set_classes(f"roast-cell roast-{state}")
 
-        changed = self._last_state[index] is not None and self._last_state[index] != state
+        changed = (
+            self._last_state[index] is not None and self._last_state[index] != state
+        )
         if animate and changed:
             cell.styles.opacity = 0.0
             cell.styles.animate("opacity", value=1.0, duration=1.2)
@@ -417,7 +453,10 @@ class RoastScreen(Screen):
                 self.refresh_builder()
 
         self.app.push_screen(
-            UpgradeModal("Roaster Upgrades", ["roaster_slot", "roaster_speed", "infuser"]), handle_result
+            UpgradeModal(
+                "Roaster Upgrades", ["roaster_slot", "roaster_speed", "infuser"]
+            ),
+            handle_result,
         )
 
     # --- Recipe log (right panel) -----------------------------------------
@@ -432,7 +471,9 @@ class RoastScreen(Screen):
         for recipe in recipes.values():
             if recipe.id in discovered:
                 bean_name = self.app.beans[recipe.bean].name
-                flavor = ", ".join(self.app.ingredients[i].name for i in recipe.ingredients)
+                flavor = ", ".join(
+                    self.app.ingredients[i].name for i in recipe.ingredients
+                )
                 flavor = flavor or "plain"
                 text = (
                     f"[gold]{recipe.name}[/]\n"

@@ -6,6 +6,8 @@ data/upgrades.json relevant to it.
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.screen import ModalScreen
@@ -32,7 +34,7 @@ class UpgradeModal(ModalScreen[bool]):
     """Dismisses with True if a purchase was made, so the caller knows
     whether to refresh state an upgrade might affect (e.g. plot count)."""
 
-    BINDINGS = [("escape", "cancel", "Close")]
+    BINDINGS: ClassVar[list[tuple[str, str, str]]] = [("escape", "cancel", "Close")]
 
     def __init__(self, title: str, upgrade_ids: list[str]) -> None:
         super().__init__()

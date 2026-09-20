@@ -35,8 +35,10 @@ class RoastedProduct:
         return {"name": self.name, "value": self.value, "recipe_id": self.recipe_id}
 
     @classmethod
-    def from_dict(cls, data: dict) -> "RoastedProduct":
-        return cls(name=data["name"], value=data["value"], recipe_id=data.get("recipe_id"))
+    def from_dict(cls, data: dict) -> RoastedProduct:
+        return cls(
+            name=data["name"], value=data["value"], recipe_id=data.get("recipe_id")
+        )
 
 
 @dataclass
@@ -70,7 +72,9 @@ class Farm:
         if have < 1:
             raise ValueError("No seeds of that strain. Buy some at the Market.")
         self.seed_inventory[bean.id] = have - 1
-        plot.plant(bean.id, growth_time if growth_time is not None else bean.growth_time, now)
+        plot.plant(
+            bean.id, growth_time if growth_time is not None else bean.growth_time, now
+        )
 
     def harvest_plot(self, plot_index: int, now: float) -> str:
         plot = self.plots[plot_index]
@@ -143,7 +147,9 @@ class Farm:
         batch_ingredients = [ingredients[i_id] for i_id in batch.ingredient_ids]
         result = resolve_roast(bean, batch_ingredients, batch.roast_level, recipes)
 
-        product = RoastedProduct(name=result.name, value=result.value, recipe_id=result.recipe_id)
+        product = RoastedProduct(
+            name=result.name, value=result.value, recipe_id=result.recipe_id
+        )
         self.roasted_inventory.append(product)
         if result.recipe_id:
             self.discovered_recipes.add(result.recipe_id)
@@ -174,7 +180,9 @@ class Farm:
     # Tiers are non-stacking: owning tier N applies only that tier's bonus,
     # not the sum of tiers 1..N.
 
-    def _current_tier_effect(self, upgrade_id: str, upgrades_data: dict, key: str) -> float:
+    def _current_tier_effect(
+        self, upgrade_id: str, upgrades_data: dict, key: str
+    ) -> float:
         tier = self.upgrade_tier(upgrade_id)
         tiers = upgrades_data.get(upgrade_id, {}).get("tiers", [])
         if tier <= 0 or tier > len(tiers):
@@ -182,13 +190,19 @@ class Farm:
         return tiers[tier - 1].get(key, 0.0)
 
     def growth_speed_bonus(self, upgrades_data: dict) -> float:
-        return self._current_tier_effect("soil_quality", upgrades_data, "growth_speed_bonus")
+        return self._current_tier_effect(
+            "soil_quality", upgrades_data, "growth_speed_bonus"
+        )
 
     def roast_speed_bonus(self, upgrades_data: dict) -> float:
-        return self._current_tier_effect("roaster_speed", upgrades_data, "roast_speed_bonus")
+        return self._current_tier_effect(
+            "roaster_speed", upgrades_data, "roast_speed_bonus"
+        )
 
     def max_ingredients(self, upgrades_data: dict) -> int:
-        return int(self._current_tier_effect("infuser", upgrades_data, "max_ingredients"))
+        return int(
+            self._current_tier_effect("infuser", upgrades_data, "max_ingredients")
+        )
 
     def max_roast_slots(self, upgrades_data: dict) -> int:
         # No free roaster to start — building the first one is the player's
@@ -225,14 +239,16 @@ class Farm:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Farm":
+    def from_dict(cls, data: dict) -> Farm:
         return cls(
             gold=data.get("gold", DEFAULT_STARTING_GOLD),
             plots=[Plot.from_dict(p) for p in data.get("plots", [])],
             seed_inventory=data.get("seed_inventory", {}),
             raw_bean_inventory=data.get("raw_bean_inventory", {}),
             ingredient_inventory=data.get("ingredient_inventory", {}),
-            roast_batches=[RoastBatch.from_dict(b) for b in data.get("roast_batches", [])],
+            roast_batches=[
+                RoastBatch.from_dict(b) for b in data.get("roast_batches", [])
+            ],
             roasted_inventory=[
                 RoastedProduct.from_dict(p) for p in data.get("roasted_inventory", [])
             ],
@@ -241,7 +257,7 @@ class Farm:
         )
 
     @classmethod
-    def new_default(cls) -> "Farm":
+    def new_default(cls) -> Farm:
         return cls(plots=[Plot() for _ in range(DEFAULT_PLOT_COUNT)])
 
     def save_to_disk(self, path=STATE_PATH) -> None:
@@ -250,7 +266,7 @@ class Farm:
             json.dump(self.to_dict(), f, indent=2)
 
     @classmethod
-    def load_from_disk(cls, path=STATE_PATH) -> "Farm":
+    def load_from_disk(cls, path=STATE_PATH) -> Farm:
         if not path.exists():
             return cls.new_default()
         with open(path, "r", encoding="utf-8") as f:

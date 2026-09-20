@@ -48,7 +48,7 @@ class Bean:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "Bean":
+    def from_dict(cls, data: dict) -> Bean:
         return cls(
             id=data["id"],
             name=data["name"],

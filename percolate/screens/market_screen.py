@@ -33,7 +33,9 @@ class MarketScreen(Screen):
         # non-dev player — see playtest_notes.md. Surfacing it here instead
         # of relying on discovery; a full bespoke nav pass (matching Farm's
         # model) is a bigger follow-up, noted in playtest_notes.md.
-        yield Static("(tab) switch between lists   (shift+tab) previous", classes="section-hint")
+        yield Static(
+            "(tab) switch between lists   (shift+tab) previous", classes="section-hint"
+        )
         with Horizontal(id="market_columns"):
             with Vertical(id="buy_column"):
                 yield Label("Buy Seeds  (enter to buy)")
@@ -90,12 +92,16 @@ class MarketScreen(Screen):
             )
             for ingredient_id in self._buy_ingredient_ids
         )
-        self._restore_index(buy_ingredients, buy_ingredients_index, len(self._buy_ingredient_ids))
+        self._restore_index(
+            buy_ingredients, buy_ingredients_index, len(self._buy_ingredient_ids)
+        )
 
         sell_beans = self.query_one("#sell_beans", ListView)
         sell_beans_index = sell_beans.index
         await sell_beans.clear()
-        self._sell_bean_ids = [b_id for b_id, count in farm.raw_bean_inventory.items() if count > 0]
+        self._sell_bean_ids = [
+            b_id for b_id, count in farm.raw_bean_inventory.items() if count > 0
+        ]
         if self._sell_bean_ids:
             await sell_beans.extend(
                 ListItem(
@@ -108,7 +114,9 @@ class MarketScreen(Screen):
             )
         else:
             await sell_beans.append(ListItem(Label("— none —")))
-        self._restore_index(sell_beans, sell_beans_index, max(1, len(self._sell_bean_ids)))
+        self._restore_index(
+            sell_beans, sell_beans_index, max(1, len(self._sell_bean_ids))
+        )
 
         sell_products = self.query_one("#sell_products", ListView)
         sell_products_index = sell_products.index
@@ -120,9 +128,13 @@ class MarketScreen(Screen):
             )
         else:
             await sell_products.append(ListItem(Label("— none —")))
-        self._restore_index(sell_products, sell_products_index, max(1, len(farm.roasted_inventory)))
+        self._restore_index(
+            sell_products, sell_products_index, max(1, len(farm.roasted_inventory))
+        )
 
-    def _restore_index(self, list_view: ListView, index: int | None, count: int) -> None:
+    def _restore_index(
+        self, list_view: ListView, index: int | None, count: int
+    ) -> None:
         # ListView.clear() always resets .index to None, dropping the
         # highlight until the player nudges an arrow key — see
         # playtest_notes.md. refresh_market() rebuilds every list on every

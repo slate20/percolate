@@ -32,14 +32,17 @@ _OPS = {
 def _condition_met(value: int, condition: str) -> bool:
     for op, cmp in _OPS.items():
         if condition.startswith(op):
-            return cmp(value, int(condition[len(op):]))
+            return cmp(value, int(condition[len(op) :]))
     return value == int(condition)
 
 
 def _apply_rules(context: dict[str, int], progression: dict) -> int:
     """First matching rule wins; falls back to `"default"` (0 if absent)."""
     for rule in progression.get("rules", []):
-        if all(_condition_met(context.get(key, 0), cond) for key, cond in rule["if"].items()):
+        if all(
+            _condition_met(context.get(key, 0), cond)
+            for key, cond in rule["if"].items()
+        ):
             return rule["tier"]
     return progression.get("default", 0)
 
@@ -91,7 +94,9 @@ def resolve_tiers(data: dict, farm, upgrades_data: dict) -> dict[str, int]:
     return tiers
 
 
-def composite_backdrop(data: dict, tier_by_slot: dict[str, int] | None = None) -> Content:
+def composite_backdrop(
+    data: dict, tier_by_slot: dict[str, int] | None = None
+) -> Content:
     """Paint every slot's art onto a blank canvas, sorted by z ascending,
     and return the whole thing as one multi-line Content for Static.update().
 
@@ -142,5 +147,5 @@ def _paste(base_row: Content, piece: Content, col: int) -> Content:
     if len(base_row) < col:
         result = result + Content(" " * (col - len(base_row)))
     result = result + piece
-    result = result + base_row[col + len(piece):]
+    result = result + base_row[col + len(piece) :]
     return result

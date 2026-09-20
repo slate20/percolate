@@ -5,6 +5,8 @@ copy in data/help_guide.md, not a screen with its own state or logic.
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from textual.app import ComposeResult
 from textual.containers import VerticalScroll
 from textual.screen import ModalScreen
@@ -22,7 +24,10 @@ class HelpModal(ModalScreen[None]):
     # "h" closes too, mirroring the key that opened it, so it isn't
     # re-intercepted by PercolateApp's own "h" binding and pushed again
     # on top of itself.
-    BINDINGS = [("escape", "cancel", "Close"), ("h", "cancel", "Close")]
+    BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
+        ("escape", "cancel", "Close"),
+        ("h", "cancel", "Close"),
+    ]
 
     def compose(self) -> ComposeResult:
         with VerticalScroll(id="help_picker"):
