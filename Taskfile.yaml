@@ -4,35 +4,45 @@ silent: true
 
 tasks:
   build:
-    desc: Standalone-Executable via PyInstaller bauen (nativ pro OS)
+    desc: Build a standalone executable via Nuitka (native per OS)
     vars:
       DISTPATH: dist/{{OS}}
+      BUILDPATH: build/{{OS}}
     cmds:
       - uv sync --extra build
-      - uv run pyinstaller percolate.spec --noconfirm --distpath {{.DISTPATH}} --workpath build/{{OS}}
+      - >-
+        uv run python -m nuitka --standalone --assume-yes-for-downloads
+        --output-dir={{.BUILDPATH}} --output-filename=percolate
+        --include-data-dir=percolate/data=data
+        --include-data-files=percolate/percolate.tcss=percolate.tcss
+        --include-package-data=textual
+        percolate/main.py
+      - mkdir -p {{.DISTPATH}}
+      - rm -rf {{.DISTPATH}}/percolate
+      - mv {{.BUILDPATH}}/main.dist {{.DISTPATH}}/percolate
       - tar -czf {{.DISTPATH}}/percolate-{{OS}}.tar.gz -C {{.DISTPATH}} percolate
       - echo "Packaged {{.DISTPATH}}/percolate-{{OS}}.tar.gz"
 
   install:
-    desc: Binary nach ~/bin installieren
+    desc: Install the binary into ~/bin
     deps: [build]
     cmds:
       - cp -r dist/{{OS}}/percolate/. "$HOME/bin/"
       - echo "Installed to $HOME/bin/percolate"
 
   cleanup:
-    desc: Build-Artefakte und -Cache entfernen (dist/, build/)
+    desc: Remove build artifacts and caches (dist/, build/)
     cmds:
       - rm -rf dist build
       - echo "Cleaned dist/ and build/"
 
   lint:
-    desc: ruff check ausführen
+    desc: Run ruff check
     cmds:
       - uv run ruff check .
 
   format:
-    desc: black + ruff (import sort) anwenden
+    desc: Apply black + ruff (import sort)
     cmds:
       - uv run black .
       - uv run ruff check --fix .
