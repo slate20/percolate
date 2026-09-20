@@ -7,7 +7,7 @@ There's no clock to race and nothing to lose by walking away. Nothing decays, no
 
 ## Download and run
 
-Grab the latest build for your OS from the [Releases](../../releases) page — no Python install required. Each release is a zip/tar folder (onedir build); extract it and run the `percolate` executable (`percolate.exe` on Windows) inside.
+Grab the latest build for your OS from the [Releases](../../releases) page — no Python install required. Each release is a single self-contained executable, `percolate` (`percolate.exe` on Windows); no extraction needed, just download and run it.
 
 ## Controls
 
@@ -72,15 +72,15 @@ task build
 
 This is how the [Releases](../../releases) builds are produced. Nuitka can't
 cross-compile, so build on whichever OS you want an executable for. `task
-build` compiles `percolate/main.py` with Nuitka in `--standalone` mode and
-packages the result as `dist/<os>/percolate-<os>.tar.gz`. Unlike PyInstaller,
-Nuitka compiles through a real C compiler, so building requires one to be
-installed (gcc/clang on Linux/macOS, MSVC Build Tools or MinGW64 on Windows —
-Nuitka can auto-install MinGW64 on Windows if none is found).
+build` compiles `percolate/main.py` with Nuitka in `--mode=onefile`, producing
+a single self-contained executable `dist/<os>/percolate` (`percolate.exe` on
+Windows) — nothing else to ship. Unlike PyInstaller, Nuitka compiles through a
+real C compiler, so building requires one to be installed (gcc/clang on
+Linux/macOS, MSVC Build Tools or MinGW64 on Windows — Nuitka can auto-install
+MinGW64 on Windows if none is found).
 
-It produces `dist/<os>/percolate/` — a whole folder (standalone build, not a
-single file) containing `percolate` (or `percolate.exe` on Windows) plus its
-bundled data/CSS/runtime. Ship the whole `percolate/` folder; the executable
-depends on the rest of it.
+On first launch, the executable unpacks its bundled data/CSS/runtime into a
+per-version cache directory and reuses it on later launches (rather than
+re-unpacking every time) for faster repeated startup.
 
 State still saves to `~/.config/percolate/state.json` (or the OS equivalent) regardless of how it was launched.

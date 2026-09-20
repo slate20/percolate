@@ -15,7 +15,7 @@ dependencies = [
 # patchelf pinned separately from the OS package: Alpine ships 0.18.0, which
 # Nuitka hard-rejects as a known-buggy release on non-Debian/Fedora/SUSE
 # distros; this PyPI build ships a working prebuilt musl binary instead.
-build = ["nuitka>=4.2", "patchelf>=0.19.1"]
+build = ["nuitka[onefile]>=4.2", "patchelf>=0.19.1"]
 
 [project.scripts]
 percolate = "percolate.main:main"
