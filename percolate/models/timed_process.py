@@ -12,7 +12,7 @@ never scale a bonus, yield, or quality outcome — waiting longer than
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 
 @dataclass
@@ -33,7 +33,7 @@ class TimedProcess:
         return min(1.0, self.elapsed(now) / self.duration)
 
     def to_dict(self) -> dict:
-        return {"started_at": self.started_at, "duration": self.duration}
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> TimedProcess:

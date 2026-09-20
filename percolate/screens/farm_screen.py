@@ -20,16 +20,7 @@ from percolate.backdrop_compositor import composite_backdrop, resolve_tiers
 from percolate.config import UI_TICK_SECONDS
 from percolate.focus_widgets import FocusHighlightOptionList
 from percolate.screens.upgrade_modal import UpgradeModal
-from percolate.widgets import NAV_HINT, apply_time_of_day
-
-
-def _format_remaining(seconds: float) -> str:
-    seconds = max(0, int(seconds))
-    hours, remainder = divmod(seconds, 3600)
-    minutes = remainder // 60
-    if hours:
-        return f"{hours}h {minutes}m"
-    return f"{minutes}m"
+from percolate.widgets import NAV_HINT, apply_time_of_day, format_remaining
 
 
 class BeanPickerScreen(ModalScreen[str | None]):
@@ -264,7 +255,7 @@ class FarmScreen(Screen):
             else:
                 state = "early" if stage in ("seed", "sprout") else "mid"
                 remaining = plot.process.duration - plot.process.elapsed(now)
-                footer = f"{stage.upper()}  {_format_remaining(remaining)}"
+                footer = f"{stage.upper()}  {format_remaining(remaining)}"
 
         text = header + "\n" + "\n".join(art) + "\n" + footer
         return text, state, art_stage
