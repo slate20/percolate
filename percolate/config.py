@@ -15,13 +15,13 @@ DEV_MODE = os.environ.get("PERCOLATE_DEV") == "1"
 CONFIG_DIR = Path.home() / ".config" / "percolate"
 STATE_PATH = CONFIG_DIR / "state.json"
 
-# Bundled content registries (JSON), shipped alongside the package. When
-# frozen by PyInstaller, bundled Python modules run out of an in-memory
-# archive — `__file__` no longer points at a real path on disk — but data
-# files added via the .spec's `datas` are extracted to `sys._MEIPASS`, so
-# that's where to look instead.
-if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-    PACKAGE_DIR = Path(sys._MEIPASS) / "percolate"
+# Bundled content registries (JSON), shipped alongside the package. In dev,
+# that's just this file's directory. The Nuitka executable is named
+# `percolate` (see Taskfile.yaml), which collides with a same-named on-disk
+# mirror of this package, so the standalone build instead ships data/CSS
+# flat next to the built executable — found here via sys.executable.
+if "__compiled__" in globals():
+    PACKAGE_DIR = Path(sys.executable).resolve().parent
 else:
     PACKAGE_DIR = Path(__file__).parent
 DATA_DIR = PACKAGE_DIR / "data"

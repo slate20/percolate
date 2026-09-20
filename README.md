@@ -7,7 +7,7 @@ There's no clock to race and nothing to lose by walking away. Nothing decays, no
 
 ## Download and run
 
-Grab the latest build for your OS from the [Releases](../../releases) page — no Python install required. Each release is a zip/tar folder (onedir build); extract it and run the `percolate` executable (`percolate.exe` on Windows) inside.
+Grab the latest build for your OS from the [Releases](../../releases) page — no Python install required. Each release is a single self-contained executable, `percolate` (`percolate.exe` on Windows); no extraction needed, just download and run it.
 
 ## Controls
 
@@ -67,11 +67,20 @@ These rewind timer start times rather than touching the system clock, so they on
 ### Building a standalone executable
 
 ```bash
-pip install -e ".[build]"
-./build.sh      # Linux/WSL/macOS
-.\build.ps1     # Windows
+task build
 ```
 
-This is how the [Releases](../../releases) builds are produced. PyInstaller can't cross-compile, so build on whichever OS you want an executable for. The `build.sh`/`build.ps1` wrapper just runs `pyinstaller percolate.spec --distpath dist/<os> --workpath build/<os>` — the `--distpath`/`--workpath` flags keep builds for different platforms from overwriting each other when run against the same checkout (e.g. Windows + WSL), and have to be passed on the command line since PyInstaller reads its output location from internal config set before the spec file runs, not from anything settable inside the spec itself. It produces `dist/<os>/percolate/` — a whole folder (onedir build, not a single file) containing `percolate` (or `percolate.exe` on Windows) plus its bundled data/CSS/runtime. Ship the whole `percolate/` folder; the executable depends on the rest of it.
+This is how the [Releases](../../releases) builds are produced. Nuitka can't
+cross-compile, so build on whichever OS you want an executable for. `task
+build` compiles `percolate/main.py` with Nuitka in `--mode=onefile`, producing
+a single self-contained executable `dist/<os>/percolate` (`percolate.exe` on
+Windows) — nothing else to ship. Unlike PyInstaller, Nuitka compiles through a
+real C compiler, so building requires one to be installed (gcc/clang on
+Linux/macOS, MSVC Build Tools or MinGW64 on Windows — Nuitka can auto-install
+MinGW64 on Windows if none is found).
+
+On first launch, the executable unpacks its bundled data/CSS/runtime into a
+per-version cache directory and reuses it on later launches (rather than
+re-unpacking every time) for faster repeated startup.
 
 State still saves to `~/.config/percolate/state.json` (or the OS equivalent) regardless of how it was launched.

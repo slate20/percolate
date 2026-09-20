@@ -3,36 +3,55 @@ version: '3'
 silent: true
 
 tasks:
+  default:
+    desc: Alias for install
+    cmds:
+      - task: install
+
   build:
-    desc: Standalone-Executable via PyInstaller bauen (nativ pro OS)
+    desc: Build a single-file executable via Nuitka (native per OS)
     vars:
       DISTPATH: dist/{{OS}}
+      BUILDPATH: build/{{OS}}
+      # Kept in sync with pyproject.toml's [project] version by hand — only
+      # feeds the onefile cache path (see --onefile-cache-mode below), not
+      # published anywhere.
+      VERSION: 0.1.0
     cmds:
       - uv sync --extra build
-      - uv run pyinstaller percolate.spec --noconfirm --distpath {{.DISTPATH}} --workpath build/{{OS}}
-      - tar -czf {{.DISTPATH}}/percolate-{{OS}}.tar.gz -C {{.DISTPATH}} percolate
-      - echo "Packaged {{.DISTPATH}}/percolate-{{OS}}.tar.gz"
+      - >-
+        uv run python -m nuitka --mode=onefile --onefile-cache-mode=cached
+        --assume-yes-for-downloads
+        --company-name=percolate --product-name=percolate --product-version={{.VERSION}}
+        --output-dir={{.BUILDPATH}} --output-filename=percolate
+        --include-data-dir=percolate/data=data
+        --include-data-files=percolate/percolate.tcss=percolate.tcss
+        --include-package-data=textual
+        percolate/main.py
+      - mkdir -p {{.DISTPATH}}
+      - mv {{.BUILDPATH}}/percolate{{exeExt}} {{.DISTPATH}}/percolate{{exeExt}}
+      - echo "Built {{.DISTPATH}}/percolate{{exeExt}}"
 
   install:
-    desc: Binary nach ~/bin installieren
+    desc: Install the binary into ~/bin
     deps: [build]
     cmds:
-      - cp -r dist/{{OS}}/percolate/. "$HOME/bin/"
-      - echo "Installed to $HOME/bin/percolate"
+      - cp dist/{{OS}}/percolate{{exeExt}} "$HOME/bin/percolate{{exeExt}}"
+      - echo "Installed to $HOME/bin/percolate{{exeExt}}"
 
   cleanup:
-    desc: Build-Artefakte und -Cache entfernen (dist/, build/)
+    desc: Remove build artifacts and caches (dist/, build/)
     cmds:
       - rm -rf dist build
       - echo "Cleaned dist/ and build/"
 
   lint:
-    desc: ruff check ausführen
+    desc: Run ruff check
     cmds:
       - uv run ruff check .
 
   format:
-    desc: black + ruff (import sort) anwenden
+    desc: Apply black + ruff (import sort)
     cmds:
       - uv run black .
       - uv run ruff check --fix .

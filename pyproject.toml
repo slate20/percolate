@@ -12,7 +12,10 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-build = ["pyinstaller>=6.10"]
+# patchelf pinned separately from the OS package: Alpine ships 0.18.0, which
+# Nuitka hard-rejects as a known-buggy release on non-Debian/Fedora/SUSE
+# distros; this PyPI build ships a working prebuilt musl binary instead.
+build = ["nuitka[onefile]>=4.2", "patchelf>=0.19.1"]
 
 [project.scripts]
 percolate = "percolate.main:main"
@@ -28,6 +31,9 @@ dev = [
 
 [tool.ruff]
 target-version = "py310"
+# Nuitka writes real .py files into build/ (e.g. scons-debug.py) that aren't
+# ours to lint.
+extend-exclude = ["build", "dist"]
 
 [tool.black]
 target-version = ["py310"]
