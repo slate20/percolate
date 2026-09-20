@@ -61,3 +61,13 @@ def apply_time_of_day(widget: Static, now: float | None = None) -> None:
         if cls != current:
             widget.remove_class(cls)
     widget.add_class(current)
+
+
+def format_remaining(seconds: float) -> str:
+    """Render a countdown as "Xh Ym" (or just "Ym" under an hour)."""
+    seconds = max(0, int(seconds))
+    hours, remainder = divmod(seconds, 3600)
+    minutes = remainder // 60
+    if hours:
+        return f"{hours}h {minutes}m"
+    return f"{minutes}m"

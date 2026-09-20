@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 
 from percolate.config import (
     CONFIG_DIR,
@@ -32,7 +32,7 @@ class RoastedProduct:
     recipe_id: str | None = None
 
     def to_dict(self) -> dict:
-        return {"name": self.name, "value": self.value, "recipe_id": self.recipe_id}
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "RoastedProduct":
@@ -212,17 +212,9 @@ class Farm:
     # --- Persistence ---------------------------------------------------------
 
     def to_dict(self) -> dict:
-        return {
-            "gold": self.gold,
-            "plots": [p.to_dict() for p in self.plots],
-            "seed_inventory": self.seed_inventory,
-            "raw_bean_inventory": self.raw_bean_inventory,
-            "ingredient_inventory": self.ingredient_inventory,
-            "roast_batches": [b.to_dict() for b in self.roast_batches],
-            "roasted_inventory": [p.to_dict() for p in self.roasted_inventory],
-            "owned_upgrades": self.owned_upgrades,
-            "discovered_recipes": sorted(self.discovered_recipes),
-        }
+        data = asdict(self)
+        data["discovered_recipes"] = sorted(self.discovered_recipes)
+        return data
 
     @classmethod
     def from_dict(cls, data: dict) -> "Farm":

@@ -35,18 +35,9 @@ from percolate.config import UI_TICK_SECONDS
 from percolate.focus_widgets import FocusHighlightOptionList, FocusHighlightSelectionList
 from percolate.models.roast import DEFAULT_ROAST_DURATION, resolve_roast
 from percolate.screens.upgrade_modal import UpgradeModal
-from percolate.widgets import NAV_HINT, apply_time_of_day
+from percolate.widgets import NAV_HINT, apply_time_of_day, format_remaining
 
 ROAST_LEVELS = [("light", "Light"), ("medium", "Medium"), ("dark", "Dark")]
-
-
-def _format_remaining(seconds: float) -> str:
-    seconds = max(0, int(seconds))
-    hours, remainder = divmod(seconds, 3600)
-    minutes = remainder // 60
-    if hours:
-        return f"{hours}h {minutes}m"
-    return f"{minutes}m"
 
 
 def _roast_state(progress: float, is_ready: bool) -> str:
@@ -337,7 +328,7 @@ class RoastScreen(Screen):
                 footer = "READY — click or (c)"
             else:
                 remaining = batch.process.duration - batch.process.elapsed(now)
-                footer = f"{_format_remaining(remaining)} remaining"
+                footer = f"{format_remaining(remaining)} remaining"
 
         frames = roast_stages[state]
         frame = frames[int(now // UI_TICK_SECONDS) % len(frames)]
@@ -392,7 +383,7 @@ class RoastScreen(Screen):
         batch = farm.roast_batches[index]
         if not batch.is_ready(now):
             remaining = batch.process.duration - batch.process.elapsed(now)
-            self.notify(f"Still roasting — {_format_remaining(remaining)} left")
+            self.notify(f"Still roasting — {format_remaining(remaining)} left")
             return
 
         product = farm.collect_roast(

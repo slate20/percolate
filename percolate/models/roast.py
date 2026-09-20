@@ -11,7 +11,7 @@ Nothing is ever an invalid or wasted roast.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 
 from percolate.config import INGREDIENTS_PATH, RECIPES_PATH, ROAST_BASE_MULTIPLIER, ROAST_STAGES_PATH
 from percolate.models.bean import Bean
@@ -28,7 +28,7 @@ class Ingredient:
     value: int  # contribution to a roasted product's compositional value
 
     def to_dict(self) -> dict:
-        return {"id": self.id, "name": self.name, "cost": self.cost, "value": self.value}
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "Ingredient":
@@ -138,12 +138,7 @@ class RoastBatch:
         return self.process.progress(now)
 
     def to_dict(self) -> dict:
-        return {
-            "bean_id": self.bean_id,
-            "ingredient_ids": self.ingredient_ids,
-            "roast_level": self.roast_level,
-            "process": self.process.to_dict() if self.process else None,
-        }
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "RoastBatch":

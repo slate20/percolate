@@ -8,6 +8,7 @@ docs/north_star.md). Owns data/farmhouse.json's schema end to end.
 from __future__ import annotations
 
 import json
+import operator
 
 from textual.content import Content
 
@@ -21,11 +22,11 @@ def load_farmhouse_data(path=FARMHOUSE_PATH) -> dict:
 
 
 _OPS = {
-    ">=": lambda v, n: v >= n,
-    "<=": lambda v, n: v <= n,
-    "==": lambda v, n: v == n,
-    ">": lambda v, n: v > n,
-    "<": lambda v, n: v < n,
+    ">=": operator.ge,
+    "<=": operator.le,
+    "==": operator.eq,
+    ">": operator.gt,
+    "<": operator.lt,
 }
 
 
