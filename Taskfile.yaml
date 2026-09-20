@@ -1,0 +1,25 @@
+version: '3'
+
+silent: true
+
+tasks:
+  build:
+    desc: Standalone-Executable via PyInstaller bauen (nativ pro OS)
+    vars:
+      DISTPATH: dist/{{OS}}
+    cmds:
+      - uv sync --extra build
+      - uv run pyinstaller percolate.spec --distpath {{.DISTPATH}} --workpath build/{{OS}}
+      - tar -czf {{.DISTPATH}}/percolate-{{OS}}.tar.gz -C {{.DISTPATH}} percolate
+      - echo "Packaged {{.DISTPATH}}/percolate-{{OS}}.tar.gz"
+
+  lint:
+    desc: ruff check ausführen
+    cmds:
+      - uv run ruff check .
+
+  format:
+    desc: black + ruff (import sort) anwenden
+    cmds:
+      - uv run black .
+      - uv run ruff check --fix .
