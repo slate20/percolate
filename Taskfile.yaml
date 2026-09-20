@@ -20,6 +20,12 @@ tasks:
       - cp -r dist/{{OS}}/percolate/. "$HOME/bin/"
       - echo "Installed to $HOME/bin/percolate"
 
+  cleanup:
+    desc: Build-Artefakte und -Cache entfernen (dist/, build/)
+    cmds:
+      - rm -rf dist build
+      - echo "Cleaned dist/ and build/"
+
   lint:
     desc: ruff check ausführen
     cmds:
