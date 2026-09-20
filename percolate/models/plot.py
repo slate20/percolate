@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 from percolate.models.timed_process import TimedProcess
 
@@ -38,10 +38,7 @@ class Plot:
         return bean_id
 
     def to_dict(self) -> dict:
-        return {
-            "bean_id": self.bean_id,
-            "process": self.process.to_dict() if self.process else None,
-        }
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "Plot":

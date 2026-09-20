@@ -8,7 +8,7 @@ and the Farm screen's state-tier color, not unique art per variety.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 from percolate.config import BEANS_PATH, PLANT_STAGES_PATH
 
@@ -39,13 +39,7 @@ class Bean:
         return stage
 
     def to_dict(self) -> dict:
-        return {
-            "id": self.id,
-            "name": self.name,
-            "growth_time": self.growth_time,
-            "seed_cost": self.seed_cost,
-            "raw_sell_value": self.raw_sell_value,
-        }
+        return asdict(self)
 
     @classmethod
     def from_dict(cls, data: dict) -> "Bean":
