@@ -193,3 +193,4 @@ class MarketScreen(Screen):
                 self.notify(f"Sold {product.name} for {product.value}g")
 
         await self.refresh_market()
+        self.app.update_subtitle()
