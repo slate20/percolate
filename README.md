@@ -1,5 +1,5 @@
 # Percolate
-<img width="1354" height="880" alt="image" src="https://github.com/user-attachments/assets/c9b2d3a4-29ae-428b-be46-e2dcc7752c9b" />
+<img width="1344" height="837" alt="image" src="https://github.com/user-attachments/assets/86da383e-a572-4168-8311-1a126fd98c17" />
 
 Percolate is a cozy, low-attention coffee farm and roastery that lives in your terminal. Plant beans, let them grow while you go about your day, harvest and roast them into your own named coffee blends, sell them at the market, and watch your farm grow along the way as you progress!
 
