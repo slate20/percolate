@@ -18,8 +18,22 @@ from textual.widgets.option_list import Option
 from percolate.backdrop_compositor import composite_backdrop, resolve_tiers
 from percolate.config import UI_TICK_SECONDS
 from percolate.focus_widgets import FocusHighlightOptionList
+from percolate.models.weather import current_weather
 from percolate.screens.upgrade_modal import UpgradeModal
-from percolate.widgets import NAV_HINT, apply_time_of_day, format_remaining
+from percolate.widgets import (
+    NAV_HINT,
+    apply_time_of_day,
+    format_remaining,
+    time_of_day_class,
+)
+
+# sky slot tiers in data/farmhouse.json, picked by current weather/time-of-day
+# rather than by resolve_tiers' upgrade-progression rules (see
+# FarmScreen._sky_tier).
+_SKY_TIER_SUN = 0
+_SKY_TIER_MOON = 1
+_SKY_TIER_RAIN = 2
+_SKY_TIER_SNOW = 3
 
 
 class BeanPickerScreen(ModalScreen[str | None]):
@@ -109,9 +123,20 @@ class FarmScreen(Screen):
         self.refresh_plots()
         self._sync_field_columns()
         apply_time_of_day(self.query_one("#tint_bar", Static))
+        self._render_backdrop()
+
+    def _sky_tier(self, now: float) -> int:
+        weather = current_weather(now)
+        if weather == "rain":
+            return _SKY_TIER_RAIN
+        if weather == "snow":
+            return _SKY_TIER_SNOW
+        is_night = time_of_day_class(now) == "tod-night"
+        return _SKY_TIER_MOON if is_night else _SKY_TIER_SUN
 
     def _render_backdrop(self) -> None:
         tier_by_slot = resolve_tiers(self.app.farmhouse_data, self.app.farm, self.app.upgrades_data)
+        tier_by_slot["sky"] = self._sky_tier(time.time())
         composited = composite_backdrop(self.app.farmhouse_data, tier_by_slot)
         self.query_one("#backdrop", Backdrop).update(composited)
 
@@ -249,7 +274,7 @@ class FarmScreen(Screen):
                 footer = "READY  (enter)" if cursored else "READY"
             else:
                 state = "early" if stage in ("seed", "sprout") else "mid"
-                remaining = plot.process.duration - plot.process.elapsed(now)
+                remaining = plot.remaining(now)
                 footer = f"{stage.upper()}  {format_remaining(remaining)}"
 
         text = header + "\n" + "\n".join(art) + "\n" + footer

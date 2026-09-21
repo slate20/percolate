@@ -11,6 +11,8 @@ import time
 
 from textual.widgets import Static
 
+from percolate.config import TOD_BUCKETS
+
 # The only hints that apply everywhere, everywhere: which key switches to
 # which screen. Rendered as one slim, muted line per screen instead of
 # Textual's default Footer, which lists every binding (including each
@@ -40,18 +42,21 @@ class AmbientBar(Static):
         self.update("".join(line))
 
 
-_TOD_CLASSES = ("tod-morning", "tod-midday", "tod-evening", "tod-night")
+_TOD_CLASSES = tuple(f"tod-{name}" for name, _ in TOD_BUCKETS)
+
+
+def time_of_day_bucket(now: float | None = None) -> str:
+    """Which of the TOD_BUCKETS windows `now` falls into, by name."""
+    hour = time.localtime(now if now is not None else time.time()).tm_hour
+    bucket = TOD_BUCKETS[-1][0]
+    for name, start_hour in TOD_BUCKETS:
+        if hour >= start_hour:
+            bucket = name
+    return bucket
 
 
 def time_of_day_class(now: float | None = None) -> str:
-    hour = time.localtime(now if now is not None else time.time()).tm_hour
-    if 5 <= hour < 11:
-        return "tod-morning"
-    if 11 <= hour < 17:
-        return "tod-midday"
-    if 17 <= hour < 22:
-        return "tod-evening"
-    return "tod-night"
+    return f"tod-{time_of_day_bucket(now)}"
 
 
 def apply_time_of_day(widget: Static, now: float | None = None) -> None:

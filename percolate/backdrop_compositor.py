@@ -98,7 +98,10 @@ def composite_backdrop(data: dict, tier_by_slot: dict[str, int] | None = None) -
 
     `tier_by_slot` (typically from `resolve_tiers`) picks which of a slot's
     `pieces` to paint; missing/omitted entries default to tier 0, and an
-    out-of-range tier clamps to the slot's highest authored piece.
+    out-of-range tier clamps to the slot's highest authored piece. A piece
+    may set its own `"color"`, overriding the slot-level one (e.g. the sky
+    slot's weather pieces: gold sun, grey70 moon, grey rain, white snow) —
+    pieces without one keep using the slot's color, as before.
 
     Each row is built as a `textual.content.Content` rather than a plain
     string, since two pieces can share a physical row (e.g. a house and a
@@ -126,13 +129,14 @@ def composite_backdrop(data: dict, tier_by_slot: dict[str, int] | None = None) -
     for slot in sorted(data["slots"], key=lambda s: s["z"]):
         pieces = slot["pieces"]
         tier = min(tier_by_slot.get(slot["id"], 0), len(pieces) - 1)
-        art = pieces[tier]["art"]
-        color = slot.get("color")
+        piece = pieces[tier]
+        art = piece["art"]
+        color = piece.get("color", slot.get("color"))
         for line_index, line in enumerate(art):
             canvas_row = slot["row"] + line_index
             if 0 <= canvas_row < height:
-                piece = Content(line).stylize(color) if color else Content(line)
-                rows[canvas_row] = _paste(rows[canvas_row], piece, slot["col"])
+                styled_line = Content(line).stylize(color) if color else Content(line)
+                rows[canvas_row] = _paste(rows[canvas_row], styled_line, slot["col"])
 
     return Content("\n").join(rows)
 

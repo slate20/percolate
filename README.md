@@ -26,12 +26,12 @@ Progress is saved to `~/.config/percolate/state.json` after every action.
 ## The loop
 
 1. **Buy seeds** at the Market with starting gold.
-2. **Plant and grow** them on the Farm screen — each plot runs its own multi-hour timer with ASCII growth stages (seed → sprout → growing → ready).
+2. **Plant and grow** them on the Farm screen — each plot runs its own multi-hour timer with ASCII growth stages (seed → sprout → growing → ready). Growth speed follows the current weather: sunny is normal pace, rain speeds it up, snow slows it down.
 3. **Harvest and sell raw beans**, or save up for the Roaster upgrade to unlock roasting.
 4. **Roast** harvested beans — choose a bean, optional flavor ingredients, and a roast level; Discover curated combinations and you'll earn a bonus over their base value.
 5. **Sell roasted product** at the Market for more than raw beans, and reinvest in upgrades (more plots, faster growth, more roast slots, more flavor slots).
 
-Your farmhouse backdrop on the Farm screen evolves automatically as you unlock upgrades.
+Your farmhouse backdrop on the Farm screen evolves automatically as you unlock upgrades, and its sky shows the current day/night and weather (sun, moon, rain, snow) — both change together on the same schedule, purely from the real clock, with no setup needed.
 
 ## Theme
 

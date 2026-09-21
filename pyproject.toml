@@ -27,3 +27,6 @@ percolate = "percolate.main:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["percolate"]
+
+[dependency-groups]
+dev = ["pytest>=8.0.0"]
