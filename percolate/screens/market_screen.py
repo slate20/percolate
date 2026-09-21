@@ -38,7 +38,7 @@ class MarketScreen(Screen):
             with Vertical(id="buy_column"):
                 yield Label("Buy Seeds  (enter to buy)")
                 yield FocusHighlightListView(id="buy_seeds")
-                yield Label("Buy Ingredients  (enter to buy)")
+                yield Label("Buy Ingredients  (enter to buy)", id="buy_ingredients_label")
                 yield FocusHighlightListView(id="buy_ingredients")
             with Vertical(id="sell_column"):
                 yield Label("Sell Raw Beans  (enter to sell)")
@@ -76,21 +76,35 @@ class MarketScreen(Screen):
         )
         self._restore_index(buy_seeds, buy_seeds_index, len(self._buy_seed_ids))
 
+        buy_ingredients_label = self.query_one("#buy_ingredients_label", Label)
         buy_ingredients = self.query_one("#buy_ingredients", ListView)
         buy_ingredients_index = buy_ingredients.index
         await buy_ingredients.clear()
-        self._buy_ingredient_ids = list(ingredients.keys())
-        await buy_ingredients.extend(
-            ListItem(
-                Label(
-                    f"{ingredients[ingredient_id].name} "
-                    f"(own {farm.ingredient_inventory.get(ingredient_id, 0)}) "
-                    f"— buy for {ingredients[ingredient_id].cost}g"
+        # Ingredients are useless without an Infuser (max_ingredients() is 0
+        # until that upgrade is owned — see Farm.max_ingredients), so selling
+        # them this early just drains a fresh save's starting gold with
+        # nothing to show for it. Hiding the list until unlocked closes off
+        # that soft-lock path (#6) rather than letting players buy flavor
+        # they can't yet use.
+        if farm.max_ingredients(self.app.upgrades_data) == 0:
+            buy_ingredients_label.update("Buy Ingredients  (locked — need Infuser upgrade)")
+            self._buy_ingredient_ids = []
+            await buy_ingredients.append(ListItem(Label("— unlock the Infuser upgrade (Roast screen) —")))
+            self._restore_index(buy_ingredients, buy_ingredients_index, 1)
+        else:
+            buy_ingredients_label.update("Buy Ingredients  (enter to buy)")
+            self._buy_ingredient_ids = list(ingredients.keys())
+            await buy_ingredients.extend(
+                ListItem(
+                    Label(
+                        f"{ingredients[ingredient_id].name} "
+                        f"(own {farm.ingredient_inventory.get(ingredient_id, 0)}) "
+                        f"— buy for {ingredients[ingredient_id].cost}g"
+                    )
                 )
+                for ingredient_id in self._buy_ingredient_ids
             )
-            for ingredient_id in self._buy_ingredient_ids
-        )
-        self._restore_index(buy_ingredients, buy_ingredients_index, len(self._buy_ingredient_ids))
+            self._restore_index(buy_ingredients, buy_ingredients_index, len(self._buy_ingredient_ids))
 
         sell_beans = self.query_one("#sell_beans", ListView)
         sell_beans_index = sell_beans.index
