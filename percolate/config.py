@@ -58,3 +58,16 @@ DEFAULT_BONUS_MULTIPLIER = 1.35
 # How often the app re-checks timed processes for stage/ready changes.
 # Kept low-frequency on purpose — this is an ambient app, not a real-time one.
 UI_TICK_SECONDS = 5.0
+
+# --- Ambient time-of-day / weather ------------------------------------------
+
+# Hour-of-day boundaries bucketing real wall-clock time into four ambient
+# windows. Shared by the day/night tinting (percolate.widgets) and the
+# weather system (percolate.models.weather) so both stay in lockstep — one
+# place to tweak if the windows ever need adjusting.
+TOD_BUCKETS: list[tuple[str, int]] = [
+    ("morning", 5),
+    ("midday", 11),
+    ("evening", 17),
+    ("night", 22),
+]
