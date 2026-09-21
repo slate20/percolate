@@ -199,12 +199,15 @@ class FarmScreen(Screen):
             return
         old_cursor = self._cursor
         self._cursor = new_cursor
-        self._highlight_cursor()
         # Repaint just the two affected cells (not a full refresh) so the
         # cursored cell's inline "(enter) ..." hint moves immediately,
-        # rather than waiting for the next tick.
+        # rather than waiting for the next tick. _paint_cell() replaces all
+        # classes via set_classes(), so _highlight_cursor() must run after
+        # it, not before — otherwise the "cursor" class it sets gets wiped
+        # right back off.
         self._paint_cell(old_cursor, animate=False)
         self._paint_cell(self._cursor, animate=False)
+        self._highlight_cursor()
 
     def action_move_up(self) -> None:
         self._move(-self._columns)
