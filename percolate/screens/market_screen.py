@@ -13,6 +13,8 @@ day-to-day trading).
 
 from __future__ import annotations
 
+from typing import ClassVar
+
 from textual.app import ComposeResult
 from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
@@ -25,6 +27,13 @@ from percolate.widgets import NAV_HINT
 class MarketScreen(Screen):
     # See FarmScreen.TITLE (farm_screen.py).
     TITLE = "Market"
+
+    BINDINGS: ClassVar[list[tuple[str, str, str]]] = [
+        ("escape", "show_farm", "Farm"),
+    ]
+
+    def action_show_farm(self) -> None:
+        self.app.action_show_screen("farm")
 
     def compose(self) -> ComposeResult:
         yield Header()
