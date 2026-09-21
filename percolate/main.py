@@ -23,11 +23,10 @@ from percolate.theme import PERCOLATE_LATTE, PERCOLATE_THEMES
 class PercolateApp(App):
     TITLE = "Percolate"
     CSS_PATH = "percolate.tcss"
-    # Textual resolves a relative CSS_PATH via inspect.getfile(type(self)),
-    # which breaks under PyInstaller (bundled modules have no real on-disk
-    # file). _BASE_PATH is Textual's documented override for exactly this —
-    # point it at config.PACKAGE_DIR, which already knows how to find the
-    # real, on-disk package directory whether running from source or frozen.
+    # Textual resolves a relative CSS_PATH via inspect.getfile(type(self)).
+    # _BASE_PATH is Textual's documented override for that — point it at
+    # config.PACKAGE_DIR, which already knows how to find the real, on-disk
+    # package directory whether running from source or a Nuitka build.
     _BASE_PATH = str(PACKAGE_DIR / "main.py")
 
     SCREENS = {

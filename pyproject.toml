@@ -12,7 +12,15 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-build = ["pyinstaller>=6.10"]
+# patchelf pinned separately from the OS package: Alpine ships 0.18.0, which
+# Nuitka hard-rejects as a known-buggy release on non-Debian/Fedora/SUSE
+# distros; this PyPI build ships a working prebuilt musl binary instead. It's
+# Linux-only: there's no prebuilt Windows wheel, and building it from source
+# there needs a C compiler most dev machines won't have.
+build = [
+    "nuitka[onefile]>=4.2",
+    "patchelf>=0.19.1; sys_platform == 'linux'",
+]
 
 [project.scripts]
 percolate = "percolate.main:main"
