@@ -81,6 +81,7 @@ class RoastScreen(Screen):
         ("s", "start_roast", "Start Roast"),
         ("c", "collect_ready", "Collect"),
         ("u", "show_upgrades", "Upgrades"),
+        ("escape", "show_farm", "Farm"),
     ]
 
     def compose(self) -> ComposeResult:
@@ -436,6 +437,9 @@ class RoastScreen(Screen):
                 self.collect_slot(index)
                 return
         self.notify("Nothing ready yet.")
+
+    def action_show_farm(self) -> None:
+        self.app.action_show_screen("farm")
 
     def action_show_upgrades(self) -> None:
         def handle_result(purchased: bool | None) -> None:
