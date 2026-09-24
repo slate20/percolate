@@ -319,6 +319,9 @@ class FarmScreen(Screen):
                 try:
                     farm.plant_bean(plot_index, bean, time.time(), growth_time=growth_time)
                     farm.save_to_disk()
+                    next_empty = farm.next_empty_plot(plot_index)
+                    if next_empty is not None:
+                        self._cursor = next_empty
                 except ValueError as exc:
                     self.notify(str(exc), severity="error")
                 self.refresh_plots()
