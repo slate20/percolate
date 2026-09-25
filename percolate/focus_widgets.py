@@ -14,7 +14,23 @@ focus clears the highlight outright rather than leaving a dim ghost of it.
 
 from __future__ import annotations
 
+from textual.actions import SkipAction
 from textual.widgets import ListView, OptionList, SelectionList
+
+
+def grid_neighbor(
+    grid: list[list[str]], current_id: str | None, d_row: int, d_col: int
+) -> str | None:
+    """Widget id one step (d_row, d_col) away from `current_id` in a
+    screen's arrow-key navigation grid, or None past the edge."""
+    for row, ids in enumerate(grid):
+        if current_id not in ids:
+            continue
+        target_row, target_col = row + d_row, ids.index(current_id) + d_col
+        if 0 <= target_row < len(grid) and 0 <= target_col < len(grid[target_row]):
+            return grid[target_row][target_col]
+        return None
+    return None
 
 
 class FocusHighlightListView(ListView):
@@ -29,6 +45,18 @@ class FocusHighlightListView(ListView):
             self.sync_focus_highlight()
         else:
             self.index = None
+
+    # At a list edge, SkipAction lets the screen's own up/down binding move
+    # focus to the neighboring field instead of the cursor stopping dead.
+    def action_cursor_up(self) -> None:
+        if not self.index:
+            raise SkipAction()
+        super().action_cursor_up()
+
+    def action_cursor_down(self) -> None:
+        if self.index is None or self.index >= len(self) - 1:
+            raise SkipAction()
+        super().action_cursor_down()
 
     def sync_focus_highlight(self) -> None:
         """Highlight the first item if this list has focus but nothing is
@@ -65,6 +93,17 @@ class _FocusHighlightOptionListMixin:
             self.sync_focus_highlight()
         else:
             self.highlighted = None
+
+    # See FocusHighlightListView.action_cursor_up.
+    def action_cursor_up(self) -> None:
+        if not self.highlighted:
+            raise SkipAction()
+        super().action_cursor_up()
+
+    def action_cursor_down(self) -> None:
+        if self.highlighted is None or self.highlighted >= self.option_count - 1:
+            raise SkipAction()
+        super().action_cursor_down()
 
     def sync_focus_highlight(self) -> None:
         # See FocusHighlightListView.sync_focus_highlight.
