@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
+from itertools import chain
 
 from percolate.config import (
     CONFIG_DIR,
@@ -72,14 +74,11 @@ class Farm:
         self.seed_inventory[bean.id] = have - 1
         plot.plant(bean.id, growth_time if growth_time is not None else bean.growth_time, now)
 
-    def next_empty_plot(self, after: int) -> int | None:
-        """Index of the next empty plot after `after`, wrapping around; None if all are planted."""
-        count = len(self.plots)
-        for offset in range(1, count + 1):
-            index = (after + offset) % count
-            if self.plots[index].is_empty:
-                return index
-        return None
+    def nearest_plot(self, after: int, matches: Callable[[Plot], bool]) -> int | None:
+        """Nearest matching plot right of `after`, else the nearest one to its left."""
+        right = range(after + 1, len(self.plots))
+        left = range(after - 1, -1, -1)
+        return next((i for i in chain(right, left) if matches(self.plots[i])), None)
 
     def harvest_plot(self, plot_index: int, now: float) -> str:
         plot = self.plots[plot_index]

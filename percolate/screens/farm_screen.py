@@ -91,6 +91,7 @@ class FarmScreen(Screen):
         self._last_stage: list[str | None] = []
         self._columns = 1
         self._cursor = 0
+        self._ready_plots: set[int] = set()
         self._hide_outline = False
         self._build_field()
         self.refresh_plots()
@@ -287,10 +288,25 @@ class FarmScreen(Screen):
         if len(self._cells) != len(farm.plots):
             self._build_field()
 
+        self._follow_newly_ready()
         for index in range(len(farm.plots)):
             self._paint_cell(index, animate=True)
 
         self._highlight_cursor()
+
+    def _follow_newly_ready(self) -> None:
+        # Jumps only on the transition to ready, so the player can still
+        # navigate away from a plot that's already waiting to be harvested.
+        now = time.time()
+        ready = {i for i, plot in enumerate(self.app.farm.plots) if plot.is_ready(now)}
+        newly_ready = ready - self._ready_plots
+        self._ready_plots = ready
+        if newly_ready:
+            self._cursor = min(newly_ready, key=lambda i: abs(i - self._cursor))
+
+    def _move_cursor_to(self, index: int | None) -> None:
+        if index is not None:
+            self._cursor = index
 
     def action_interact(self) -> None:
         farm = self.app.farm
@@ -319,9 +335,7 @@ class FarmScreen(Screen):
                 try:
                     farm.plant_bean(plot_index, bean, time.time(), growth_time=growth_time)
                     farm.save_to_disk()
-                    next_empty = farm.next_empty_plot(plot_index)
-                    if next_empty is not None:
-                        self._cursor = next_empty
+                    self._move_cursor_to(farm.nearest_plot(plot_index, lambda p: p.is_empty))
                 except ValueError as exc:
                     self.notify(str(exc), severity="error")
                 self.refresh_plots()
@@ -330,6 +344,10 @@ class FarmScreen(Screen):
         elif plot.is_ready(now):
             farm.harvest_plot(index, now)
             farm.save_to_disk()
+            target = farm.nearest_plot(index, lambda p: p.is_ready(now))
+            if target is None:
+                target = farm.nearest_plot(index, lambda p: p.is_empty)
+            self._move_cursor_to(target)
             self.refresh_plots()
 
     def action_show_upgrades(self) -> None:
