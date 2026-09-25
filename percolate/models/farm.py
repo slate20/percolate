@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Callable
 from dataclasses import asdict, dataclass, field
+from itertools import chain
 
 from percolate.config import (
     CONFIG_DIR,
@@ -71,6 +73,12 @@ class Farm:
             raise ValueError("No seeds of that strain. Buy some at the Market.")
         self.seed_inventory[bean.id] = have - 1
         plot.plant(bean.id, growth_time if growth_time is not None else bean.growth_time, now)
+
+    def nearest_plot(self, after: int, matches: Callable[[Plot], bool]) -> int | None:
+        """Nearest matching plot right of `after`, else the nearest one to its left."""
+        right = range(after + 1, len(self.plots))
+        left = range(after - 1, -1, -1)
+        return next((i for i in chain(right, left) if matches(self.plots[i])), None)
 
     def harvest_plot(self, plot_index: int, now: float) -> str:
         plot = self.plots[plot_index]
