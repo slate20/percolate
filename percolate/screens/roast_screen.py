@@ -241,7 +241,16 @@ class RoastScreen(Screen):
             f"-> {preview.name}: ~{preview.value}g {discovered}"
         )
 
-    def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
+    # Bean/level are persistent choices, so moving the highlight with the
+    # arrow keys picks them too — otherwise leaving the list (e.g. down to
+    # Start Roast) silently kept the old choice and snapped back to it.
+    # Unfocused highlights (OptionList auto-highlights its first option on
+    # construction) aren't player input and must not override the choice.
+    def on_option_list_option_highlighted(self, event: OptionList.OptionHighlighted) -> None:
+        if event.option_list.has_focus:
+            self.on_option_list_option_selected(event)
+
+    def on_option_list_option_selected(self, event: OptionList.OptionMessage) -> None:
         if event.option_list.id == "bean_list":
             self._selected_bean_id = event.option.id
         elif event.option_list.id == "level_list":
