@@ -23,7 +23,6 @@ import math
 import textwrap
 import time
 
-from textual import events
 from textual.app import ComposeResult
 from textual.containers import Grid, Horizontal, Vertical, VerticalScroll
 from textual.screen import Screen
@@ -32,7 +31,11 @@ from textual.widgets.option_list import Option
 from textual.widgets.selection_list import Selection
 
 from percolate.config import UI_TICK_SECONDS
-from percolate.focus_widgets import FocusHighlightOptionList, FocusHighlightSelectionList
+from percolate.focus_widgets import (
+    FocusHighlightOptionList,
+    FocusHighlightSelectionList,
+    grid_neighbor,
+)
 from percolate.models.roast import DEFAULT_ROAST_DURATION, resolve_roast
 from percolate.screens.upgrade_modal import UpgradeModal
 from percolate.widgets import NAV_HINT, apply_time_of_day, format_remaining
@@ -65,6 +68,21 @@ class RoastCell(Static):
             screen.collect_slot(self.index)
 
 
+class ChoiceOptionList(FocusHighlightOptionList):
+    """Bean / Roast Level list: their highlight *is* the persistent choice
+    (which bean/level the next roast uses), so on focus it lands straight on
+    that choice rather than the generic first item. Highlighting the first
+    item and correcting it afterwards flickered both the list and, since a
+    highlight now picks (see RoastScreen.on_option_list_option_highlighted),
+    the builder status line."""
+
+    def sync_focus_highlight(self) -> None:
+        screen = self.screen
+        if self.has_focus and self.highlighted is None and isinstance(screen, RoastScreen):
+            screen._sync_selection_highlight(self.id)
+        super().sync_focus_highlight()
+
+
 class RoastScreen(Screen):
     # Must match .roast-cell in percolate.tcss: card width (33) minus its
     # 1-column border on each side.
@@ -73,7 +91,17 @@ class RoastScreen(Screen):
     # See FarmScreen.TITLE.
     TITLE = "Roasting"
 
+    # Class-level defaults: Textual auto-focuses bean_list before on_mount,
+    # and ChoiceOptionList reads the current choice on that first focus.
+    _selected_bean_id: str | None = None
+    _selected_level: str | None = "medium"
+
+    # Arrow-key order of the builder fields, top to bottom.
+    _NAV_GRID = [["bean_list"], ["flavor_list"], ["level_list"], ["start_button"]]
+
     BINDINGS = [
+        ("up", "focus_neighbor(-1)", "Previous field"),
+        ("down", "focus_neighbor(1)", "Next field"),
         ("s", "start_roast", "Start Roast"),
         ("c", "collect_ready", "Collect"),
         ("u", "show_upgrades", "Upgrades"),
@@ -87,13 +115,13 @@ class RoastScreen(Screen):
                 # Same reasoning as MarketScreen's hint (see market_screen.py):
                 # the builder panel's 4 fields rely on Textual's default
                 # Tab-cycling focus, which isn't obvious to a non-dev player.
-                yield Static("(tab) next field   (shift+tab) previous", classes="section-hint")
+                yield Static("(tab / down) next field   (shift+tab / up) previous", classes="section-hint")
                 yield Label("Bean", classes="builder-heading")
-                yield FocusHighlightOptionList(id="bean_list")
+                yield ChoiceOptionList(id="bean_list")
                 yield Label("Flavor", id="flavor_heading", classes="builder-heading")
                 yield FocusHighlightSelectionList(id="flavor_list")
                 yield Label("Roast Level", classes="builder-heading")
-                yield FocusHighlightOptionList(
+                yield ChoiceOptionList(
                     *[Option(label, id=opt_id) for opt_id, label in ROAST_LEVELS],
                     id="level_list",
                 )
@@ -109,8 +137,6 @@ class RoastScreen(Screen):
     def on_mount(self) -> None:
         self._cells: list[RoastCell] = []
         self._last_state: list[str | None] = []
-        self._selected_bean_id: str | None = None
-        self._selected_level: str | None = "medium"
 
         self._build_field()
         self.refresh_builder()
@@ -128,17 +154,13 @@ class RoastScreen(Screen):
         self.refresh_batches()
         apply_time_of_day(self.query_one("#tint_bar", Static))
 
-    def on_descendant_focus(self, event: events.DescendantFocus) -> None:
-        # Bean and Roast Level aren't plain browsing lists — their
-        # highlight is the only visual indicator of a persistent choice
-        # (which bean/level the next roast uses), so on focus they should
-        # show *that* selection rather than the generic "first item"
-        # default the FocusHighlightOptionList mixin applies to every other
-        # list. See playtest_notes.md.
-        if event.widget.id in ("bean_list", "level_list"):
-            self._sync_selection_highlight(event.widget.id)
-
     # --- Builder (left panel) -------------------------------------------
+
+    def action_focus_neighbor(self, d_row: int) -> None:
+        focused_id = self.focused.id if self.focused else None
+        target_id = grid_neighbor(self._NAV_GRID, focused_id, d_row, 0)
+        if target_id:
+            self.set_focus(self.query_one(f"#{target_id}"))
 
     def _sync_selection_highlight(self, widget_id: str) -> None:
         if widget_id == "bean_list":
@@ -169,7 +191,7 @@ class RoastScreen(Screen):
             self._selected_bean_id = owned_bean_ids[0] if owned_bean_ids else None
         # Only reassert the highlight while focused — clear_options() resets
         # it to None regardless, and if bean_list isn't focused it should
-        # stay cleared (see FocusHighlightOptionList / on_descendant_focus)
+        # stay cleared (see ChoiceOptionList)
         # rather than being force-shown independent of Tab focus.
         if bean_list.has_focus:
             self._sync_selection_highlight("bean_list")
@@ -226,7 +248,16 @@ class RoastScreen(Screen):
             f"-> {preview.name}: ~{preview.value}g {discovered}"
         )
 
-    def on_option_list_option_selected(self, event: OptionList.OptionSelected) -> None:
+    # Bean/level are persistent choices, so moving the highlight with the
+    # arrow keys picks them too — otherwise leaving the list (e.g. down to
+    # Start Roast) silently kept the old choice and snapped back to it.
+    # Unfocused highlights (OptionList auto-highlights its first option on
+    # construction) aren't player input and must not override the choice.
+    def on_option_list_option_highlighted(self, event: OptionList.OptionHighlighted) -> None:
+        if event.option_list.has_focus:
+            self.on_option_list_option_selected(event)
+
+    def on_option_list_option_selected(self, event: OptionList.OptionMessage) -> None:
         if event.option_list.id == "bean_list":
             self._selected_bean_id = event.option.id
         elif event.option_list.id == "level_list":

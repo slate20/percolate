@@ -4,7 +4,8 @@ A plain utility screen on purpose (see percolate.tcss's header comment) — no
 ambient art or tint here, that "zen" budget belongs to the Farm and Roast
 screens. Four lists, split by transaction direction rather than stacked in
 one column: Buy Seeds / Buy Ingredients on the left, Sell Raw Beans / Sell
-Roasted Products on the right. Tab moves focus between lists; Enter
+Roasted Products on the right. Tab or the arrow keys move focus between
+lists; Enter
 (ListView's default select) acts on the highlighted row — buy or sell one
 unit. Upgrades live as contextual modals on the Farm and Roast screens now,
 not here — they're a different kind of purchase (permanent perks, not
@@ -18,13 +19,29 @@ from textual.containers import Horizontal, Vertical
 from textual.screen import Screen
 from textual.widgets import Header, Label, ListItem, ListView, Static
 
-from percolate.focus_widgets import FocusHighlightListView
+from percolate.focus_widgets import FocusHighlightListView, grid_neighbor
 from percolate.widgets import NAV_HINT
 
 
 class MarketScreen(Screen):
     # See FarmScreen.TITLE (farm_screen.py).
     TITLE = "Market"
+
+    # Arrow-key layout of the four lists, matching their on-screen columns.
+    _NAV_GRID = [["buy_seeds", "sell_beans"], ["buy_ingredients", "sell_products"]]
+
+    BINDINGS = [
+        ("up", "focus_neighbor(-1, 0)", "Previous list"),
+        ("down", "focus_neighbor(1, 0)", "Next list"),
+        ("left", "focus_neighbor(0, -1)", "Buy column"),
+        ("right", "focus_neighbor(0, 1)", "Sell column"),
+    ]
+
+    def action_focus_neighbor(self, d_row: int, d_col: int) -> None:
+        focused_id = self.focused.id if self.focused else None
+        target_id = grid_neighbor(self._NAV_GRID, focused_id, d_row, d_col)
+        if target_id:
+            self.set_focus(self.query_one(f"#{target_id}"))
 
     def compose(self) -> ComposeResult:
         yield Header()
@@ -33,7 +50,7 @@ class MarketScreen(Screen):
         # non-dev player — see playtest_notes.md. Surfacing it here instead
         # of relying on discovery; a full bespoke nav pass (matching Farm's
         # model) is a bigger follow-up, noted in playtest_notes.md.
-        yield Static("(tab) switch between lists   (shift+tab) previous", classes="section-hint")
+        yield Static("(tab / arrows) switch between lists   (shift+tab) previous", classes="section-hint")
         with Horizontal(id="market_columns"):
             with Vertical(id="buy_column"):
                 yield Label("Buy Seeds  (enter to buy)")
