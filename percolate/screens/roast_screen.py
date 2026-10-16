@@ -69,6 +69,13 @@ class RoastScreen(Screen):
     # Must match .roast-cell in percolate.tcss: card width (33) minus its
     # 1-column border on each side.
     _CARD_TEXT_WIDTH = 31
+    # Must match .roast-cell / #roaster_field in percolate.tcss: card width,
+    # the horizontal grid-gutter, and #roaster_field's left+right padding.
+    # Same fit-per-row approach as FarmScreen._max_columns.
+    _CARD_WIDTH = 33
+    _CARD_GUTTER = 2
+    _FIELD_SIDE_PADDING = 4
+    _MAX_COLUMNS = 3
 
     # See FarmScreen.TITLE.
     TITLE = "Roasting"
@@ -111,6 +118,7 @@ class RoastScreen(Screen):
         self._last_state: list[str | None] = []
         self._selected_bean_id: str | None = None
         self._selected_level: str | None = "medium"
+        self._columns = 1
 
         self._build_field()
         self.refresh_builder()
@@ -119,13 +127,22 @@ class RoastScreen(Screen):
         apply_time_of_day(self.query_one("#tint_bar", Static))
         self.set_interval(UI_TICK_SECONDS, self.tick)
         self.set_focus(self.query_one("#bean_list", OptionList))
+        # #center_panel has no size until the first layout pass.
+        self.call_after_refresh(self._sync_field_columns)
 
     def on_screen_resume(self) -> None:
         self.refresh_builder()
         self.refresh_batches()
+        self.call_after_refresh(self._sync_field_columns)
+
+    def on_resize(self, event: events.Resize) -> None:
+        # Reacting immediately (rather than only on the 5s tick poll) keeps
+        # cards from sitting squashed side-by-side after the window shrinks.
+        self.call_after_refresh(self._sync_field_columns)
 
     def tick(self) -> None:
         self.refresh_batches()
+        self._sync_field_columns()
         apply_time_of_day(self.query_one("#tint_bar", Static))
 
     def on_descendant_focus(self, event: events.DescendantFocus) -> None:
@@ -285,7 +302,7 @@ class RoastScreen(Screen):
         grid.remove_children()
 
         count = self._capacity()
-        self._columns = min(max(1, math.ceil(math.sqrt(count)) if count else 1), 3)
+        self._columns = self._max_columns(count)
         grid.styles.grid_size_columns = self._columns
 
         if count == 0:
@@ -299,6 +316,35 @@ class RoastScreen(Screen):
         grid.mount(*self._cells)
         for index in range(count):
             self._paint_cell(index, animate=False)
+
+    def _max_columns(self, count: int) -> int:
+        """How many roaster cards fit per row in the center panel.
+
+        Cards keep a fixed width so their ASCII art never distorts; when the
+        panel is too narrow for them side-by-side, they wrap below instead
+        (there's always vertical room under the first card).
+        """
+        if count <= 0:
+            return 1
+        desired = min(math.ceil(math.sqrt(count)), self._MAX_COLUMNS)
+        available_width = self.query_one("#center_panel", Vertical).size.width
+        if available_width <= 0:
+            # Not laid out yet — _sync_field_columns corrects this after
+            # the first refresh.
+            return desired
+        usable = max(0, available_width - self._FIELD_SIDE_PADDING)
+        fits = (usable + self._CARD_GUTTER) // (self._CARD_WIDTH + self._CARD_GUTTER)
+        return max(1, min(desired, fits))
+
+    def _sync_field_columns(self) -> None:
+        count = len(self._cells)
+        if count == 0:
+            return
+        columns = self._max_columns(count)
+        if columns == self._columns:
+            return
+        self._columns = columns
+        self.query_one("#roaster_field", Grid).styles.grid_size_columns = columns
 
     def _cell_content(self, index: int) -> tuple[str, str]:
         farm = self.app.farm

@@ -10,11 +10,33 @@ the "depth without friction" pillar, these subclasses make it a clean
 binary instead: gaining focus auto-highlights the first item immediately
 (no more needing to know an arrow key wakes the cursor up), and losing
 focus clears the highlight outright rather than leaving a dim ghost of it.
+
+A ListView built with `edge_exit=True` (Market's lists) also hands an
+up/down press at its first/last item back to the screen via SkipAction, so
+the screen's own arrow binding can move focus on to the neighboring list
+(see grid_neighbor) instead of the cursor stopping dead. Off by default so
+other lists keep their normal behavior.
 """
 
 from __future__ import annotations
 
+from textual.actions import SkipAction
 from textual.widgets import ListView, OptionList, SelectionList
+
+
+def grid_neighbor(
+    grid: list[list[str]], current_id: str | None, d_row: int, d_col: int
+) -> str | None:
+    """Widget id one step (d_row, d_col) away from `current_id` in a
+    screen's arrow-key navigation grid, or None past the edge."""
+    for row, ids in enumerate(grid):
+        if current_id not in ids:
+            continue
+        target_row, target_col = row + d_row, ids.index(current_id) + d_col
+        if 0 <= target_row < len(grid) and 0 <= target_col < len(grid[target_row]):
+            return grid[target_row][target_col]
+        return None
+    return None
 
 
 class FocusHighlightListView(ListView):
@@ -23,12 +45,26 @@ class FocusHighlightListView(ListView):
     doesn't trigger either branch here — the highlight only moves for an
     actual Tab in/out."""
 
+    def __init__(self, *args, edge_exit: bool = False, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.edge_exit = edge_exit
+
     def watch_has_focus(self, value: bool) -> None:
         super().watch_has_focus(value)
         if value:
             self.sync_focus_highlight()
         else:
             self.index = None
+
+    def action_cursor_up(self) -> None:
+        if self.edge_exit and not self.index:
+            raise SkipAction()
+        super().action_cursor_up()
+
+    def action_cursor_down(self) -> None:
+        if self.edge_exit and (self.index is None or self.index >= len(self) - 1):
+            raise SkipAction()
+        super().action_cursor_down()
 
     def sync_focus_highlight(self) -> None:
         """Highlight the first item if this list has focus but nothing is
